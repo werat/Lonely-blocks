@@ -27,6 +27,9 @@ $(OBJ)/%.o: $(SRC)/%.cc
 	$(CC) $(CFLAGS) -c -s $< -o $@
 
 $(OBJS): | $(OBJ)
+$(NAME): | $(BIN)
   
 $(OBJ):
 	mkdir $(OBJ)
+$(BIN):
+	mkdir $(BIN)
