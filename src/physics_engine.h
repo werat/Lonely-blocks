@@ -13,6 +13,8 @@ private:
    std::vector<Physical*> physicals;
 
 public:
+   Vector2 gravity;
+public:
    PhysicsEngine();
    ~PhysicsEngine();
 

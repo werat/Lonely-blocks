@@ -2,6 +2,8 @@
 
 #include "renderer.h"
 
+#include <SDL.h>
+
 void Renderer::DrawTexture(SDL_Renderer *renderer, SDL_Texture *tex, SDL_Rect &dstRect, SDL_Rect *srcRect,
                            float angle, int xPivot, int yPivot,
                            SDL_RendererFlip flip)

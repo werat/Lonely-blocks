@@ -2,8 +2,6 @@
 
 #include "physical.h"
 
-#include <SDL.h>
-
 #include <cmath>
 
 Physical::Physical(const Vector2& position, int w, int h)

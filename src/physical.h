@@ -7,34 +7,40 @@
 
 #include <SDL.h>
 
+#include <functional>
+
 // Maybe store a pointer to PhysicsEngine?
 // Then we could change isStatic on fly.
 
 class Physical
 {
-   public:
-      Vector2 position;
-      int width, height;
+public:
+   Vector2 position;
+   int width, height;
 
-      Vector2 velocity;
-      Vector2 acceleration;
+   Vector2 velocity;
+   Vector2 acceleration;
 
-      bool onGround;
-      bool atCeiling;
+   bool onGround;
+   bool atCeiling;
 
-      bool isStatic;
+   bool isStatic;
 
-   public:
-      Physical(const Vector2& position, int w, int h);
-      ~Physical() {}
+   std::function<bool(Physical&, Physical&)> onCollision;
 
-      SDL_Rect bounds() const  
-      { 
-         return { (int)(position.x - width / 2), (int)(position.y - height / 2), width, height }; 
-      }
+public:
+   Physical(const Vector2& position, int w, int h);
+   ~Physical() {}
 
-      void Translate(const Vector2& delta);
-      bool Intersects(const Physical& other, Vector2* resolution = nullptr);      
+   SDL_Rect bounds() const  
+   { 
+      return { (int)(position.x - width / 2), (int)(position.y - height / 2), width, height }; 
+   }
+
+   void Translate(const Vector2& delta);
+
+   // TODO: maybe move to physical engine?
+   bool Intersects(const Physical& other, Vector2* resolution = nullptr);
 };
 
 #endif

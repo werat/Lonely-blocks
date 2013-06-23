@@ -4,7 +4,6 @@
 #define SDL_GAME_H
 
 #include "app.h"
-#include "physical.h"
 #include "world.h"
 
 #include <SDL.h>

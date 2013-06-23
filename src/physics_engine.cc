@@ -7,11 +7,10 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
-
-#include <fstream>
-extern std::ofstream logfile;
+#include <iterator>
 
 PhysicsEngine::PhysicsEngine()
+   : gravity(0, 1000)
 {
 }
 
@@ -43,21 +42,30 @@ void PhysicsEngine::Update(float delta)
       {
          if (physicalA->isStatic) continue;
 
-         physicalA->velocity += Vector2(0, 1000) * dt; // gravity
+         physicalA->velocity += gravity * dt; // gravity
          physicalA->position += physicalA->velocity * dt;
 
          physicalA->onGround = false;
          physicalA->atCeiling = false;
 
          std::vector<Physical*> c_physicals;
-         Vector2 resolution(std::numeric_limits<double>::max());
-         Vector2 zero;
+         Vector2 zero, resolution(std::numeric_limits<double>::max());
+         bool shouldResolve = false;
          int priorityX = 0, priorityY = 0;
          for (auto physicalB : physicals)
          {
             if (physicalA == physicalB) continue;
 
-            if (physicalA->Intersects(*physicalB, &zero))
+            bool collided = physicalA->Intersects(*physicalB, &zero);
+            if (collided)
+            {
+               if (physicalA->onCollision != nullptr)
+                  collided &= physicalA->onCollision(*physicalA, *physicalB); 
+               if (physicalB->onCollision != nullptr)
+                  collided &= physicalB->onCollision(*physicalB, *physicalA); 
+            }
+            shouldResolve |= collided;
+            if (collided)
             {
                c_physicals.push_back(physicalB);
 
@@ -71,7 +79,7 @@ void PhysicsEngine::Update(float delta)
                else            ++priorityY;
             }
          }
-         if (!c_physicals.empty())
+         if (shouldResolve) // TODO: should check if collision occured
          {
             if (std::abs(priorityX) > std::abs(priorityY)) 
             {
