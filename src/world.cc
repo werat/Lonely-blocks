@@ -7,7 +7,6 @@
 World::~World()
 {
    for (auto tile : tiles) delete tile;
-   delete player;
 }
 
 void World::Init()
@@ -24,7 +23,7 @@ void World::Init()
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -32,9 +31,9 @@ void World::Init()
       { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 1, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 2, 0, 0, 4, 0, 0, 0, 1, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1 },
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
    };
 
@@ -42,7 +41,7 @@ void World::Init()
    {
       for (int j = 0; j < m; ++j)
       {
-         if (tiles_map[i][j] == 1 || tiles_map[i][j] == 2)
+         if (tiles_map[i][j] > 0)
          {
             int w = 50;
             int h = 30;
@@ -50,7 +49,7 @@ void World::Init()
             Physical* p = new Physical(center, w, h);
             p->isStatic = true;
             tiles.push_back(p);
-            physicsEngine.AttachPhysical(*p);
+            physicsEngine.AttachPhysical(p);
 
             if (tiles_map[i][j] == 2)
             {
@@ -59,12 +58,23 @@ void World::Init()
                   return true;
                };
             }
+            if (tiles_map[i][j] == 3)
+            {
+               p->onCollision = [](Physical& self, Physical& other) {
+                  self.isStatic = false;
+                  return true;
+               };
+            }
+            if (tiles_map[i][j] == 4)
+            {
+               p->isStatic = false;
+            }
          }
       }
    }
    Vector2 center = { 120, 500 };
-   player = new Physical(center, 30, 60);
-   physicsEngine.AttachPhysical(*player);
+   player = Physical(center, 30, 60);
+   physicsEngine.AttachPhysical(&player);
 }
 void World::Update(float delta)
 {
@@ -83,9 +93,9 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_RenderDrawRect(renderer, &bounds);
    } 
 
-   if (!player->onGround) SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
-   else                   SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
-   SDL_Rect bounds = player->bounds();
+   if (!player.onGround) SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
+   else                  SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
+   SDL_Rect bounds = player.bounds();
    SDL_RenderFillRect(renderer, &bounds);
 }
 
@@ -99,15 +109,15 @@ void World::HandleInput()
    if (state[SDL_SCANCODE_UP]) input.y = -1;
    if (state[SDL_SCANCODE_DOWN]) input.y = 1;
 
-   if (state[SDL_SCANCODE_A]) player->position.x -= 0.3;
-   if (state[SDL_SCANCODE_D]) player->position.x += 0.3;
+   if (state[SDL_SCANCODE_A]) player.position.x -= 0.3;
+   if (state[SDL_SCANCODE_D]) player.position.x += 0.3;
 }
 
 void World::UpdatePlayer(float delta)
 {
-   if (input.y < 0 &&  player->onGround) {
-      player->velocity.y = -400; // jump
+   if (input.y < 0 &&  player.onGround) {
+      player.velocity.y = -400; // jump
    }
 
-   player->position.x += input.x * 200 * delta;
+   player.position.x += input.x * 200 * delta;
 }

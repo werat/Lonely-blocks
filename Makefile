@@ -7,9 +7,11 @@ SRC = src
 INCLUDE = C:\SDL\include\SDL2
 LIB = C:\SDL\lib
 
-CFLAGS = -I$(INCLUDE) -std=gnu++11 -O2 -Wall
-LFLAGS = -L$(LIB) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -mwindows
 CC = g++
+CFLAGS = -I$(INCLUDE) -std=gnu++11 -O2 -Wall
+LFLAGS = -L$(LIB) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image 
+# in Release (for windows):
+# LFLAGS += -mwindows
 
 CORE_OBJS = app.o renderer.o SDL_game.o vector2.o physical.o physics_engine.o world.o main.o
 

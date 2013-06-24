@@ -25,10 +25,12 @@ public:
    bool atCeiling;
 
    bool isStatic;
+   bool isGravityApplied;
 
    std::function<bool(Physical&, Physical&)> onCollision;
 
 public:
+   Physical();
    Physical(const Vector2& position, int w, int h);
    ~Physical() {}
 

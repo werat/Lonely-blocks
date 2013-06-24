@@ -8,27 +8,38 @@
 #include <algorithm>
 #include <limits>
 #include <iterator>
+#include <stdexcept>
 
 PhysicsEngine::PhysicsEngine()
-   : gravity(0, 1000)
 {
+   gravity = Vector2(0, 1000);
 }
 
 PhysicsEngine::~PhysicsEngine()
 {
 }
 
-void PhysicsEngine::AttachPhysical(Physical& physical)
+void PhysicsEngine::AttachPhysical(Physical* physical)
 {
    // TODO: check if already attached;
+   if (physical == nullptr)
+      throw std::runtime_error("physical can't be null.");
 
-   physicals.push_back(&physical);
+   if (std::find(begin(physicals), end(physicals), physical) != end(physicals))
+      throw std::runtime_error("physical is already attached.");
+
+   physicals.push_back(physical);
 }
-void PhysicsEngine::DetachPhysical(Physical& physical)
+void PhysicsEngine::DetachPhysical(Physical* physical)
 {
    // TODO: check if exist
+   if (physical == nullptr)
+      throw std::runtime_error("physical can't be null");
 
-   physicals.erase(std::remove(begin(physicals), end(physicals), &physical), end(physicals));
+   if (std::find(begin(physicals), end(physicals), physical) == end(physicals))
+      throw std::runtime_error("physial is not attached.");
+
+   physicals.erase(std::remove(begin(physicals), end(physicals), physical), end(physicals));
 }
 
 void PhysicsEngine::Update(float delta)
@@ -42,7 +53,8 @@ void PhysicsEngine::Update(float delta)
       {
          if (physicalA->isStatic) continue;
 
-         physicalA->velocity += gravity * dt; // gravity
+         if (physicalA->isGravityApplied)
+            physicalA->velocity += gravity * dt;
          physicalA->position += physicalA->velocity * dt;
 
          physicalA->onGround = false;
@@ -60,9 +72,9 @@ void PhysicsEngine::Update(float delta)
             if (collided)
             {
                if (physicalA->onCollision != nullptr)
-                  collided &= physicalA->onCollision(*physicalA, *physicalB); 
+                  collided &= physicalA->onCollision(*physicalA, *physicalB);
                if (physicalB->onCollision != nullptr)
-                  collided &= physicalB->onCollision(*physicalB, *physicalA); 
+                  collided &= physicalB->onCollision(*physicalB, *physicalA);
             }
             shouldResolve |= collided;
             if (collided)
@@ -79,7 +91,7 @@ void PhysicsEngine::Update(float delta)
                else            ++priorityY;
             }
          }
-         if (shouldResolve) // TODO: should check if collision occured
+         if (shouldResolve)
          {
             if (std::abs(priorityX) > std::abs(priorityY)) 
             {
@@ -167,7 +179,7 @@ void PhysicsEngine::UpdatePhysicalState(Physical& physical, const Vector2& resol
       physical.velocity.x = 0;
    }
 
-   if (onGround) // maybe we want also to reset velocity if atCeiling?
+   if (onGround || atCeiling) // maybe we want also to reset velocity if atCeiling?
    {
       physical.velocity.y = 0;
    }

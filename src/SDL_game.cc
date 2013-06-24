@@ -22,9 +22,6 @@ void SDLGame::OnEvent(SDL_Event* event)
    App::OnEvent(event);
 }
 
-#include <fstream>
-std::ofstream logfile("info.log");
-
 void SDLGame::OnInit()  
 {
    width = 800;

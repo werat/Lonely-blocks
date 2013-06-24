@@ -4,6 +4,11 @@
 
 #include <cmath>
 
+Physical::Physical()
+   : Physical(Vector2::Zero, 0, 0)
+{
+}
+
 Physical::Physical(const Vector2& position, int w, int h)
 {
    this->position = position;
@@ -11,6 +16,7 @@ Physical::Physical(const Vector2& position, int w, int h)
    this->width = w;
    this->height = h;
    this->isStatic = false;
+   this->isGravityApplied = true;
 }
 
 void Physical::Translate(const Vector2& delta)

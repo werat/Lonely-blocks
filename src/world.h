@@ -13,7 +13,7 @@ private:
    PhysicsEngine physicsEngine;
    
    std::vector<Physical*> tiles;
-   Physical* player;
+   Physical player;
    
    Vector2 input;
 

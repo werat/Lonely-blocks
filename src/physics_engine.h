@@ -18,9 +18,9 @@ public:
    PhysicsEngine();
    ~PhysicsEngine();
 
-   // TODO: very dangerous as physical can be soon destroyed and pointer would ve invalid
-   void AttachPhysical(Physical& physical);
-   void DetachPhysical(Physical& physical);
+   // TODO: very dangerous as physical can be soon destroyed and pointer would be invalid
+   void AttachPhysical(Physical* physical);
+   void DetachPhysical(Physical* physical);
 
    void Update(float delta);
 
