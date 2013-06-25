@@ -19,67 +19,66 @@ PhysicsEngine::~PhysicsEngine()
 {
 }
 
-void PhysicsEngine::AttachPhysical(Physical* physical)
+void PhysicsEngine::AttachRigidBody(RigidBody* rigidBody)
 {
    // TODO: check if already attached;
-   if (physical == nullptr)
-      throw std::runtime_error("physical can't be null.");
+   if (rigidBody == nullptr)
+      throw std::invalid_argument("rigidBody can't be null.");
 
-   if (std::find(begin(physicals), end(physicals), physical) != end(physicals))
-      throw std::runtime_error("physical is already attached.");
-
-   physicals.push_back(physical);
+   if (std::find(begin(_rigidBodys), end(_rigidBodys), rigidBody) != end(_rigidBodys))
+      throw std::logic_error("rigidBody is already attached.");
+   
+   _rigidBodys.push_back(rigidBody);
 }
-void PhysicsEngine::DetachPhysical(Physical* physical)
+void PhysicsEngine::DetachRigidBody(RigidBody* rigidBody)
 {
    // TODO: check if exist
-   if (physical == nullptr)
-      throw std::runtime_error("physical can't be null");
+   if (rigidBody == nullptr)
+      throw std::invalid_argument("rigidBody can't be null");
 
-   if (std::find(begin(physicals), end(physicals), physical) == end(physicals))
-      throw std::runtime_error("physial is not attached.");
+   if (std::find(begin(_rigidBodys), end(_rigidBodys), rigidBody) == end(_rigidBodys))
+      throw std::logic_error("physial is not attached.");
 
-   physicals.erase(std::remove(begin(physicals), end(physicals), physical), end(physicals));
+   _rigidBodys.erase(std::remove(begin(_rigidBodys), end(_rigidBodys), rigidBody), end(_rigidBodys));
 }
 
 void PhysicsEngine::Update(float delta)
 {
-   const int steps = 5;
-   const double dt = delta / steps; // delta is fixed, although we should use fix this
+   const double dt = delta / _steps; // delta is fixed, otherwise we should use fix this
    
-   for (int i = 0; i < steps; ++i)
+   for (int i = 0; i < _steps; ++i)
    {
-      for (auto physicalA : physicals)
+      for (auto rigidBodyA : _rigidBodys)
       {
-         if (physicalA->isStatic) continue;
+         if (rigidBodyA->isStatic) continue;
 
-         if (physicalA->isGravityApplied)
-            physicalA->velocity += gravity * dt;
-         physicalA->position += physicalA->velocity * dt;
+         if (rigidBodyA->isGravityApplied)
+            rigidBodyA->velocity += gravity * dt;
+         rigidBodyA->position += rigidBodyA->velocity * dt; // should use more accurate intergration
 
-         physicalA->onGround = false;
-         physicalA->atCeiling = false;
+         rigidBodyA->onGround = false;
+         rigidBodyA->atCeiling = false;
 
-         std::vector<Physical*> c_physicals;
+         std::vector<RigidBody*> c_rigidBodys;
          Vector2 zero, resolution(std::numeric_limits<double>::max());
          bool shouldResolve = false;
          int priorityX = 0, priorityY = 0;
-         for (auto physicalB : physicals)
+         for (auto rigidBodyB : _rigidBodys)
          {
-            if (physicalA == physicalB) continue;
+            if (rigidBodyA == rigidBodyB) continue;
 
-            bool collided = physicalA->Intersects(*physicalB, &zero);
+            bool collided = rigidBodyA->Intersects(*rigidBodyB, &zero);
             if (collided)
             {
-               if (physicalA->onCollision != nullptr)
-                  collided &= physicalA->onCollision(*physicalA, *physicalB);
-               if (physicalB->onCollision != nullptr)
-                  collided &= physicalB->onCollision(*physicalB, *physicalA);
+               if (rigidBodyA->onCollision != nullptr)
+                  collided &= rigidBodyA->onCollision(*rigidBodyA, *rigidBodyB);
+               if (rigidBodyB->onCollision != nullptr)
+                  collided &= rigidBodyB->onCollision(*rigidBodyB, *rigidBodyA);
             }
             shouldResolve |= collided;
             if (collided)
             {
-               c_physicals.push_back(physicalB);
+               c_rigidBodys.push_back(rigidBodyB);
 
                if (std::abs(zero.x) < std::abs(resolution.x)) resolution.x = zero.x;
                if (std::abs(zero.y) < std::abs(resolution.y)) resolution.y = zero.y;
@@ -96,42 +95,42 @@ void PhysicsEngine::Update(float delta)
             if (std::abs(priorityX) > std::abs(priorityY)) 
             {
                resolution.y = 0;
-               ResolveXThenY(*physicalA, c_physicals, resolution);
+               ResolveXThenY(*rigidBodyA, c_rigidBodys, resolution);
             }
             else if (std::abs(priorityX) < std::abs(priorityY))
             {
                resolution.x = 0;
-               ResolveYThenX(*physicalA, c_physicals, resolution);
+               ResolveYThenX(*rigidBodyA, c_rigidBodys, resolution);
             }
             else
             {
                if (std::abs(resolution.x) <= std::abs(resolution.y))
                {
                   resolution.y = 0;
-                  ResolveXThenY(*physicalA, c_physicals, resolution);
+                  ResolveXThenY(*rigidBodyA, c_rigidBodys, resolution);
                }
                else
                {
                   resolution.x = 0;
-                  ResolveYThenX(*physicalA, c_physicals, resolution);
+                  ResolveYThenX(*rigidBodyA, c_rigidBodys, resolution);
                }
             }
 
-            UpdatePhysicalState(*physicalA, resolution);
+            UpdateRigidBodyState(*rigidBodyA, resolution);
          }
       }   
    }
 }
 
-void PhysicsEngine::ResolveXThenY(Physical& physical, std::vector<Physical*>& c_physicals, const Vector2& resolution)
+void PhysicsEngine::ResolveXThenY(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution)
 {
    Vector2 zero = Vector2::Zero;
    bool collided = false;
-   physical.position += resolution;
+   rigidBody.position += resolution;
    Vector2 res = Vector2(0, std::numeric_limits<double>::max());
-   for (auto physicalB : c_physicals)
+   for (auto rigidBodyB : c_rigidBodys)
    {
-      if (physical.Intersects(*physicalB, &zero))
+      if (rigidBody.Intersects(*rigidBodyB, &zero))
       {
          collided = true;
          res.y = std::min(res.y, zero.y);
@@ -139,20 +138,20 @@ void PhysicsEngine::ResolveXThenY(Physical& physical, std::vector<Physical*>& c_
    }
    if (collided)
    {
-      physical.position += res;
-      UpdatePhysicalState(physical, res);
+      rigidBody.position += res;
+      UpdateRigidBodyState(rigidBody, res);
    }
 }
 
-void PhysicsEngine::ResolveYThenX(Physical& physical, std::vector<Physical*>& c_physicals, const Vector2& resolution)
+void PhysicsEngine::ResolveYThenX(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution)
 {
    Vector2 zero = Vector2::Zero;
    bool collided = false;
-   physical.position += resolution;
+   rigidBody.position += resolution;
    Vector2 res = Vector2(std::numeric_limits<double>::max(), 0);
-   for (auto physicalB : c_physicals)
+   for (auto rigidBodyB : c_rigidBodys)
    {
-      if (physical.Intersects(*physicalB, &zero))
+      if (rigidBody.Intersects(*rigidBodyB, &zero))
       {
          collided = true;
          res.x = std::min(res.x, zero.x);
@@ -160,27 +159,27 @@ void PhysicsEngine::ResolveYThenX(Physical& physical, std::vector<Physical*>& c_
    }
    if (collided)
    {
-      physical.position += res;
-      UpdatePhysicalState(physical, res);
+      rigidBody.position += res;
+      UpdateRigidBodyState(rigidBody, res);
    }
 }
 
-void PhysicsEngine::UpdatePhysicalState(Physical& physical, const Vector2& resolution)
+void PhysicsEngine::UpdateRigidBodyState(RigidBody& rigidBody, const Vector2& resolution)
 {
-   bool onGround = resolution.y < 0 && physical.velocity.y > 0;
-   bool atCeiling = resolution.y > 0 && physical.velocity.y < 0;
+   bool onGround = resolution.y < 0 && rigidBody.velocity.y > 0;
+   bool atCeiling = resolution.y > 0 && rigidBody.velocity.y < 0;
 
-   physical.onGround = onGround;
-   physical.atCeiling = atCeiling;
+   rigidBody.onGround = onGround;
+   rigidBody.atCeiling = atCeiling;
 
-   if ((resolution.x < 0 && physical.velocity.x > 0) ||
-       (resolution.x > 0 && physical.velocity.x < 0))
+   if ((resolution.x < 0 && rigidBody.velocity.x > 0) ||
+       (resolution.x > 0 && rigidBody.velocity.x < 0))
    {
-      physical.velocity.x = 0;
+      rigidBody.velocity.x = 0;
    }
 
    if (onGround || atCeiling) // maybe we want also to reset velocity if atCeiling?
    {
-      physical.velocity.y = 0;
+      rigidBody.velocity.y = 0;
    }
 }

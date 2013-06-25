@@ -1,7 +1,7 @@
 // @werat
 
-#ifndef PHYSICAL_H
-#define PHYSICAL_H 
+#ifndef RIGID_BODY_H
+#define RIGID_BODY_H 
 
 #include "vector2.h"
 
@@ -12,7 +12,7 @@
 // Maybe store a pointer to PhysicsEngine?
 // Then we could change isStatic on fly.
 
-class Physical
+class RigidBody 
 {
 public:
    Vector2 position;
@@ -27,12 +27,12 @@ public:
    bool isStatic;
    bool isGravityApplied;
 
-   std::function<bool(Physical&, Physical&)> onCollision;
+   std::function<bool(RigidBody&, RigidBody&)> onCollision;
 
 public:
-   Physical();
-   Physical(const Vector2& position, int w, int h);
-   ~Physical() {}
+   RigidBody();
+   RigidBody(const Vector2& position, int w, int h);
+   ~RigidBody() {}
 
    SDL_Rect bounds() const  
    { 
@@ -41,8 +41,8 @@ public:
 
    void Translate(const Vector2& delta);
 
-   // TODO: maybe move to physical engine?
-   bool Intersects(const Physical& other, Vector2* resolution = nullptr);
+   // TODO: maybe move to physics engine?
+   bool Intersects(const RigidBody& other, Vector2* resolution = nullptr);
 };
 
 #endif

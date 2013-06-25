@@ -1,6 +1,6 @@
 // @werat
 
-#include "physical.h"
+#include "rigid_body.h"
 #include "physics_engine.h"
 
 #include <SDL.h>
@@ -12,8 +12,8 @@ class World
 private:
    PhysicsEngine physicsEngine;
    
-   std::vector<Physical*> tiles;
-   Physical player;
+   std::vector<RigidBody*> tiles;
+   RigidBody player;
    
    Vector2 input;
 

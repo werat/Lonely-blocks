@@ -1,29 +1,29 @@
 // @werat
 
-#include "physical.h"
+#include "rigid_body.h"
 
 #include <cmath>
 
-Physical::Physical()
-   : Physical(Vector2::Zero, 0, 0)
+RigidBody::RigidBody()
+   : RigidBody(Vector2::Zero, 0, 0)
 {
 }
 
-Physical::Physical(const Vector2& position, int w, int h)
+RigidBody::RigidBody(const Vector2& position, int w, int h)
 {
    this->position = position;
-   this->velocity = Vector2::Zero;
    this->width = w;
    this->height = h;
+   this->velocity = Vector2::Zero;
    this->isStatic = false;
    this->isGravityApplied = true;
 }
 
-void Physical::Translate(const Vector2& delta)
+void RigidBody::Translate(const Vector2& delta)
 {
    this->position += delta;
 }
-bool Physical::Intersects(const Physical& other, Vector2* resolution)
+bool RigidBody::Intersects(const RigidBody& other, Vector2* resolution)
 {
    Vector2 n = other.position - this->position;
 

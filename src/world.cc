@@ -46,35 +46,35 @@ void World::Init()
             int w = 50;
             int h = 30;
             Vector2 center = { (float)(w / 2 + w * j), (float)(h / 2 + h * i) };
-            Physical* p = new Physical(center, w, h);
-            p->isStatic = true;
-            tiles.push_back(p);
-            physicsEngine.AttachPhysical(p);
+            RigidBody* r = new RigidBody(center, w, h);
+            r->isStatic = true;
+            tiles.push_back(r);
+            physicsEngine.AttachRigidBody(r);
 
             if (tiles_map[i][j] == 2)
             {
-               p->onCollision = [](Physical& self, Physical& other) {
+               r->onCollision = [](RigidBody& self, RigidBody& other) {
                   other.velocity.y = -400;
                   return true;
                };
             }
             if (tiles_map[i][j] == 3)
             {
-               p->onCollision = [](Physical& self, Physical& other) {
+               r->onCollision = [](RigidBody& self, RigidBody& other) {
                   self.isStatic = false;
                   return true;
                };
             }
             if (tiles_map[i][j] == 4)
             {
-               p->isStatic = false;
+               r->isStatic = false;
             }
          }
       }
    }
    Vector2 center = { 120, 500 };
-   player = Physical(center, 30, 60);
-   physicsEngine.AttachPhysical(&player);
+   player = RigidBody(center, 30, 60);
+   physicsEngine.AttachRigidBody(&player);
 }
 void World::Update(float delta)
 {
