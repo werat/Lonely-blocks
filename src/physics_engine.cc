@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <limits>
@@ -21,165 +22,192 @@ PhysicsEngine::~PhysicsEngine()
 
 void PhysicsEngine::AttachRigidBody(RigidBody* rigidBody)
 {
-   // TODO: check if already attached;
    if (rigidBody == nullptr)
       throw std::invalid_argument("rigidBody can't be null.");
 
-   if (std::find(begin(_rigidBodys), end(_rigidBodys), rigidBody) != end(_rigidBodys))
+   if (std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody) != end(_rigidBodies))
       throw std::logic_error("rigidBody is already attached.");
    
-   _rigidBodys.push_back(rigidBody);
+   _rigidBodies.push_back(rigidBody);
 }
 void PhysicsEngine::DetachRigidBody(RigidBody* rigidBody)
 {
-   // TODO: check if exist
    if (rigidBody == nullptr)
       throw std::invalid_argument("rigidBody can't be null");
 
-   if (std::find(begin(_rigidBodys), end(_rigidBodys), rigidBody) == end(_rigidBodys))
+   if (std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody) == end(_rigidBodies))
       throw std::logic_error("physial is not attached.");
 
-   _rigidBodys.erase(std::remove(begin(_rigidBodys), end(_rigidBodys), rigidBody), end(_rigidBodys));
+   _rigidBodies.erase(std::remove(begin(_rigidBodies), end(_rigidBodies), rigidBody), end(_rigidBodies));
 }
+
 
 void PhysicsEngine::Update(float delta)
 {
-   const double dt = delta / _steps; // delta is fixed, otherwise we should use fix this
+   const double dt = delta / _steps; // delta is fixed, otherwise we should fix this
    
+   std::vector<ContactData> contacts;
+
    for (int i = 0; i < _steps; ++i)
    {
-      for (auto rigidBodyA : _rigidBodys)
+      // Find contacts
+      for (auto rigidBodyA : _rigidBodies)
+      {
+         if (rigidBodyA->isStatic) continue;
+
+         // TODO (werat): this is bad, because with several dynamic objects we'll have pairs of contacts
+         for (auto rigidBodyB : _rigidBodies)
+         {
+            if (rigidBodyA == rigidBodyB) continue;
+
+            // TODO (werat): make some broad phase (even if current version IS a broad phase)
+            ContactData contact = CreateContactData(rigidBodyA, rigidBodyB);
+            if (contact.penetration > 0 && ShouldCollide(rigidBodyA, rigidBodyB)) {
+               contacts.emplace_back(contact);
+            }
+         }
+      }
+      // Apply impulses
+      // for (int i = 0; i < 10; ++i) // TODO (werat): check if need more iterations
+      {
+         for (auto contact : contacts)
+         {
+            if (contact.first->onCollision != nullptr)
+               contact.first->onCollision(contact.first, contact.second);
+            if (contact.second->onCollision != nullptr)
+               contact.second->onCollision(contact.second, contact.first);
+            
+            ResolveContact(contact);
+         }
+      }
+      // Intergrate velocities TODO (werat): maybe should split in two steps
+      for (auto rigidBodyA : _rigidBodies)
       {
          if (rigidBodyA->isStatic) continue;
 
          if (rigidBodyA->isGravityApplied)
             rigidBodyA->velocity += gravity * dt;
-         rigidBodyA->position += rigidBodyA->velocity * dt; // should use more accurate intergration
-
-         rigidBodyA->onGround = false;
-         rigidBodyA->atCeiling = false;
-
-         std::vector<RigidBody*> c_rigidBodys;
-         Vector2 zero, resolution(std::numeric_limits<double>::max());
-         bool shouldResolve = false;
-         int priorityX = 0, priorityY = 0;
-         for (auto rigidBodyB : _rigidBodys)
-         {
-            if (rigidBodyA == rigidBodyB) continue;
-
-            bool collided = rigidBodyA->Intersects(*rigidBodyB, &zero);
-            if (collided)
-            {
-               if (rigidBodyA->onCollision != nullptr)
-                  collided &= rigidBodyA->onCollision(*rigidBodyA, *rigidBodyB);
-               if (rigidBodyB->onCollision != nullptr)
-                  collided &= rigidBodyB->onCollision(*rigidBodyB, *rigidBodyA);
-            }
-            shouldResolve |= collided;
-            if (collided)
-            {
-               c_rigidBodys.push_back(rigidBodyB);
-
-               if (std::abs(zero.x) < std::abs(resolution.x)) resolution.x = zero.x;
-               if (std::abs(zero.y) < std::abs(resolution.y)) resolution.y = zero.y;
-
-               if (zero.x < 0) --priorityX;
-               else            ++priorityX;
-
-               if (zero.y < 0) --priorityY;
-               else            ++priorityY;
-            }
-         }
-         if (shouldResolve)
-         {
-            if (std::abs(priorityX) > std::abs(priorityY)) 
-            {
-               resolution.y = 0;
-               ResolveXThenY(*rigidBodyA, c_rigidBodys, resolution);
-            }
-            else if (std::abs(priorityX) < std::abs(priorityY))
-            {
-               resolution.x = 0;
-               ResolveYThenX(*rigidBodyA, c_rigidBodys, resolution);
-            }
-            else
-            {
-               if (std::abs(resolution.x) <= std::abs(resolution.y))
-               {
-                  resolution.y = 0;
-                  ResolveXThenY(*rigidBodyA, c_rigidBodys, resolution);
-               }
-               else
-               {
-                  resolution.x = 0;
-                  ResolveYThenX(*rigidBodyA, c_rigidBodys, resolution);
-               }
-            }
-
-            UpdateRigidBodyState(*rigidBodyA, resolution);
-         }
-      }   
-   }
-}
-
-void PhysicsEngine::ResolveXThenY(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution)
-{
-   Vector2 zero = Vector2::Zero;
-   bool collided = false;
-   rigidBody.position += resolution;
-   Vector2 res = Vector2(0, std::numeric_limits<double>::max());
-   for (auto rigidBodyB : c_rigidBodys)
-   {
-      if (rigidBody.Intersects(*rigidBodyB, &zero))
-      {
-         collided = true;
-         res.y = std::min(res.y, zero.y);
+         rigidBodyA->position += rigidBodyA->velocity * dt; // TODO (werat): should use more accurate intergration
       }
-   }
-   if (collided)
-   {
-      rigidBody.position += res;
-      UpdateRigidBodyState(rigidBody, res);
-   }
-}
-
-void PhysicsEngine::ResolveYThenX(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution)
-{
-   Vector2 zero = Vector2::Zero;
-   bool collided = false;
-   rigidBody.position += resolution;
-   Vector2 res = Vector2(std::numeric_limits<double>::max(), 0);
-   for (auto rigidBodyB : c_rigidBodys)
-   {
-      if (rigidBody.Intersects(*rigidBodyB, &zero))
+      // Correct position
+      for (auto contact : contacts)
       {
-         collided = true;
-         res.x = std::min(res.x, zero.x);
+         CorrectPosition(contact);
       }
-   }
-   if (collided)
-   {
-      rigidBody.position += res;
-      UpdateRigidBodyState(rigidBody, res);
+      contacts.clear();
    }
 }
 
-void PhysicsEngine::UpdateRigidBodyState(RigidBody& rigidBody, const Vector2& resolution)
+bool PhysicsEngine::ShouldCollide(RigidBody* first, RigidBody* second)
 {
-   bool onGround = resolution.y < 0 && rigidBody.velocity.y > 0;
-   bool atCeiling = resolution.y > 0 && rigidBody.velocity.y < 0;
+   // if (first == second) return false;
 
-   rigidBody.onGround = onGround;
-   rigidBody.atCeiling = atCeiling;
+   const cFilter& filterA = first->filterData();
+   const cFilter& filterB = second->filterData();
 
-   if ((resolution.x < 0 && rigidBody.velocity.x > 0) ||
-       (resolution.x > 0 && rigidBody.velocity.x < 0))
+   if (filterA.groupIndex == filterB.groupIndex && filterA.groupIndex != 0)
    {
-      rigidBody.velocity.x = 0;
+      return filterA.groupIndex > 0;
    }
 
-   if (onGround || atCeiling) // maybe we want also to reset velocity if atCeiling?
+   bool collide = (filterA.maskBits & filterB.categoryBits) != 0 
+               && (filterB.maskBits & filterA.categoryBits) != 0;
+   return collide;
+}
+
+ContactData PhysicsEngine::CreateContactData(RigidBody* first, RigidBody* second)
+{
+   ContactData contact;
+   contact.first = first;
+   contact.second = second;
+   contact.penetration = 0.0;
+
+   Vector2 n = second->position - first->position;
+
+   double x_overlap = first->width / 2 + second->width / 2 - std::abs(n.x);
+   double y_overlap = first->height / 2 + second->height / 2 - std::abs(n.y);
+
+   if (x_overlap > 0 && y_overlap > 0)
    {
-      rigidBody.velocity.y = 0;
+      // TODO (werat): optimize to cool inline functions instead of copysign
+      if (x_overlap < y_overlap)
+      {
+         contact.normal = Vector2(-std::copysign(1.0, n.x), 0);
+      }
+      else
+      {
+         contact.normal = Vector2(0, -std::copysign(1.0, n.y));
+      }
+
+      contact.penetration = std::min(x_overlap, y_overlap);
    }
+
+   return contact;
+}
+
+void PhysicsEngine::ResolveContact(const ContactData& contact)
+{
+   RigidBody* first = contact.first;
+   RigidBody* second = contact.second;
+   Vector2 normal = contact.normal;
+
+   double inv_mass_sum = first->inv_mass + second->inv_mass;
+
+   Vector2 rv = second->velocity - first->velocity;
+
+   double alongNormal = rv.Dot(normal);
+   // check if separating velocity
+   if (alongNormal < 0) return;
+
+   // TODO (werat): optimize to cool inline functions
+   // smth like (restitution1 > restitution2 : restitution2 ? restitution1)
+   double e = std::min(first->restitution, second->restitution);
+
+   // calculate impulse
+   double j = -(1.0 + e) * alongNormal;
+   j /= inv_mass_sum;
+
+   // apply impulse
+   Vector2 impulse = normal * j;
+   first->velocity -= impulse * first->inv_mass;
+   second->velocity += impulse * second->inv_mass;
+
+   // calculate friction impulse
+   rv = second->velocity - first->velocity;
+   Vector2 t = rv - (normal * rv.Dot(normal));
+
+   if (t == Vector2::Zero) return;
+   t.Normalize();
+
+   // calculate friction coefficient
+   double sf = std::sqrt(first->static_friction * second->static_friction);
+   double df = std::sqrt(first->dynamic_friction * second->dynamic_friction);
+
+   // j tangent magnitude
+   double jt = -rv.Dot(t);
+   jt /= inv_mass_sum;
+
+   Vector2 tangentImpulse;
+   if (std::abs(jt) < -j * sf)
+      tangentImpulse = t * jt;
+   else
+      tangentImpulse = t * j * df;
+
+   first->velocity -= tangentImpulse * first->inv_mass;
+   second->velocity += tangentImpulse * second->inv_mass;
+}
+void PhysicsEngine::CorrectPosition(const ContactData& contact)
+{
+   // let second is static
+   RigidBody* first = contact.first;
+   RigidBody* second = contact.second;
+   Vector2 normal = contact.normal;
+
+   double percent = 0.2; // usually 20% to 80%
+   double slop = 0.0; // TODO (werat): do we need this slop?
+   Vector2 correction = normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
+   first->position += correction * first->inv_mass;
+   second->position += correction * second->inv_mass;
+
+   // contact.first->position += normal * contact.penetration;
 }

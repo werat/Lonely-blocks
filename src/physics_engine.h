@@ -7,6 +7,15 @@
 
 #include <vector>
 
+struct ContactData
+{
+   RigidBody* first;
+   RigidBody* second;
+
+   Vector2 normal;
+   double penetration;
+};
+
 class PhysicsEngine
 {
 private:
@@ -14,7 +23,7 @@ private:
    // dt would be (delta / _steps) if delta is fixed
    const int _steps = 5;
 
-   std::vector<RigidBody*> _rigidBodys;
+   std::vector<RigidBody*> _rigidBodies;
 
 public:
    Vector2 gravity;
@@ -22,16 +31,17 @@ public:
    PhysicsEngine();
    ~PhysicsEngine();
 
-   // TODO: very dangerous as rigidBody can be soon destroyed and pointer would be invalid
    void AttachRigidBody(RigidBody* rigidBody);
    void DetachRigidBody(RigidBody* rigidBody);
 
    void Update(float delta);
 
 private:
-   void ResolveXThenY(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution);
-   void ResolveYThenX(RigidBody& rigidBody, std::vector<RigidBody*>& c_rigidBodys, const Vector2& resolution);
-   void UpdateRigidBodyState(RigidBody& rigidBody, const Vector2& resolution);
+   bool ShouldCollide(RigidBody* first, RigidBody* second);
+
+   ContactData CreateContactData(RigidBody* first, RigidBody* second);
+   void ResolveContact(const ContactData& contact);
+   void CorrectPosition(const ContactData& contact);
 };
 
 #endif

@@ -23,17 +23,17 @@ void World::Init()
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+      { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
       { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 1, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 2, 0, 0, 4, 0, 0, 0, 1, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 1, 0, 0, 3, 0, 1, 0, 1, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 2, 0, 3, 1, 0, 0, 0, 1, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0, 0, 0, 1 },
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
    };
 
@@ -53,27 +53,25 @@ void World::Init()
 
             if (tiles_map[i][j] == 2)
             {
-               r->onCollision = [](RigidBody& self, RigidBody& other) {
-                  other.velocity.y = -400;
+               r->onCollision = [](RigidBody* self, RigidBody* other) {
+                  other->velocity.y = -400;
                   return true;
                };
             }
             if (tiles_map[i][j] == 3)
             {
-               r->onCollision = [](RigidBody& self, RigidBody& other) {
-                  self.isStatic = false;
-                  return true;
-               };
-            }
-            if (tiles_map[i][j] == 4)
-            {
-               r->isStatic = false;
+                cFilter filter;
+                filter.IgnoreCategory(1 << 0);
+                r->setFilterData(filter);
             }
          }
       }
    }
    Vector2 center = { 120, 500 };
    player = RigidBody(center, 30, 60);
+   player.inv_mass = 1.0;
+   player.restitution = 0.4;
+   player.onGround = true;
    physicsEngine.AttachRigidBody(&player);
 }
 void World::Update(float delta)
@@ -93,10 +91,12 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_RenderDrawRect(renderer, &bounds);
    } 
 
-   if (!player.onGround) SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
-   else                  SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
+   if (player.onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
+   else                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
    SDL_Rect bounds = player.bounds();
    SDL_RenderFillRect(renderer, &bounds);
+   SDL_SetRenderDrawColor(renderer, 0, 225, 35, 255); // for border
+   SDL_RenderDrawRect(renderer, &bounds);
 }
 
 void World::HandleInput()
@@ -115,9 +115,24 @@ void World::HandleInput()
 
 void World::UpdatePlayer(float delta)
 {
-   if (input.y < 0 &&  player.onGround) {
-      player.velocity.y = -400; // jump
+   if (input.y < 0 ) {
+      player.velocity.y += -40; // apply jumping force
+   }
+   if (input.x != 0 ) {
+      player.velocity.x += 1000 * delta * input.x;
    }
 
-   player.position.x += input.x * 200 * delta;
+   // if (input.y > 0 ) {
+   //    std::cout << "==============================" << std::endl;
+   //    std::cout << "Position = " << player.position << std::endl;
+   //    std::cout << "Left = " << player.bounds().x << std::endl;
+   //    std::cout << "Left calc = " << player.position.x - player.width / 2 << std::endl;
+   //    std::cout << "Left calc(int) = " << (int)std::round(player.position.x - player.width / 2) << std::endl;
+
+   //    std::cout << "Position.x = " << player.position.x << std::endl;
+   //    std::cout << "width = " << player.width << std::endl;
+   //    std::cout << "width / 2 = " << player.width / 2 << std::endl;
+   // }
+
+   // player.position.x += input.x * 200 * delta;
 }
