@@ -2,12 +2,18 @@
 
 #include <string>
 #include <stdexcept>
+#include <sstream>
 
 #include <SDL.h>
 
 #include "app.h"
 #include "renderer.h"
 
+#define FORMAT  SDL_PIXELFORMAT_ARGB8888
+#define AMASK   0xff000000 /**< Alpha bit mask. */
+#define RMASK   0x00ff0000 /**< Red bit mask. */
+#define GMASK   0x0000ff00 /**< Green bit mask. */
+#define BMASK   0x000000ff /**< Blue bit mask. */
 
 void App::OnInit()
 {
@@ -109,4 +115,24 @@ void App::Run()
 void App::Exit()
 {
    isRunning = false;
+}
+
+void App::TakeScreenshot(std::string path)
+{
+   unsigned char pixels[width * height * 4];
+   SDL_Rect rect = { 0, 0, width, height };
+
+   SDL_RenderReadPixels(renderer, &rect, FORMAT, pixels, width * 4);
+   SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, width, height, 32, width * 4,
+                                                   RMASK, GMASK, BMASK, AMASK);
+
+   if (path.empty())
+   {
+      std::ostringstream s;
+      s << "screenshot" << SDL_GetTicks() << ".bmp";
+      path = std::string(s.str());
+   }
+
+   SDL_SaveBMP(surface, path.c_str());
+   SDL_FreeSurface(surface);
 }

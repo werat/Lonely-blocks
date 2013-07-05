@@ -27,13 +27,13 @@ void World::Init()
       { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1 },
       { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 1, 0, 0, 3, 0, 1, 0, 1, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 2, 0, 3, 1, 0, 0, 0, 1, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1 },
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
    };
 
@@ -43,9 +43,9 @@ void World::Init()
       {
          if (tiles_map[i][j] > 0)
          {
-            int w = 50;
-            int h = 30;
-            Vector2 center = { (float)(w / 2 + w * j), (float)(h / 2 + h * i) };
+            double w = 50;
+            double h = 30;
+            Vector2 center = { w / 2 + w * j, h / 2 + h * i };
             RigidBody* r = new RigidBody(center, w, h);
             r->isStatic = true;
             tiles.push_back(r);
@@ -53,10 +53,19 @@ void World::Init()
 
             if (tiles_map[i][j] == 2)
             {
-               r->onCollision = [](RigidBody* self, RigidBody* other) {
+               double j_w = 48;
+               double j_h = 6;
+               Vector2 j_c = { w / 2 + w * j, j_h / 2 + h * i };
+
+               auto jump_platform = new RigidBody(j_c, j_w, j_h);
+               jump_platform->isStatic = true;
+               jump_platform->onCollision = [](RigidBody* self, RigidBody* other) {
                   other->velocity.y = -400;
                   return true;
                };
+
+               tiles.push_back(jump_platform);
+               physicsEngine.AttachRigidBody(jump_platform);
             }
             if (tiles_map[i][j] == 3)
             {

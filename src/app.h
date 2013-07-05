@@ -38,6 +38,10 @@ protected:
    virtual void OnCleanup();
 
    void Exit();
+
+   /// Some usefull functions
+
+   void TakeScreenshot(std::string path = "");
 };
 
 #endif   
