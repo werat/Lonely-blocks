@@ -42,6 +42,20 @@ private:
    ContactData CreateContactData(RigidBody* first, RigidBody* second);
    void ResolveContact(const ContactData& contact);
    void CorrectPosition(const ContactData& contact);
+
+   double MixFriction(double f1, double f2);
+   double MixRestitution(double r1, double r2);
 };
+
+inline double PhysicsEngine::MixFriction(double f1, double f2)
+{
+   return std::sqrt(f1 * f2);
+}
+
+inline double PhysicsEngine::MixRestitution(double r1, double r2)
+{
+   return r1 > r2 ? r1 : r2;
+}
+
 
 #endif

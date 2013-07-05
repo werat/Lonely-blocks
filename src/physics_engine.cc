@@ -81,13 +81,17 @@ void PhysicsEngine::Update(float delta)
          }
       }
       // Intergrate velocities TODO (werat): maybe should split in two steps
-      for (auto rigidBodyA : _rigidBodies)
+      for (auto r : _rigidBodies)
       {
-         if (rigidBodyA->isStatic) continue;
+         if (r->isStatic) continue;
 
-         if (rigidBodyA->isGravityApplied)
-            rigidBodyA->velocity += gravity * dt;
-         rigidBodyA->position += rigidBodyA->velocity * dt; // TODO (werat): should use more accurate intergration
+         if (r->isGravityApplied) r->velocity += gravity * dt;
+
+         r->velocity += r->force * r->inv_mass * dt;
+         r->angular_velocity += r->torque * r->inv_inertia * dt;
+
+         r->position += r->velocity * dt; // TODO (werat): should use more accurate intergration
+         r->rotation += r->angular_velocity * dt;
       }
       // Correct position
       for (auto contact : contacts)
@@ -155,13 +159,14 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
 
    Vector2 rv = second->velocity - first->velocity;
 
-   double alongNormal = rv.Dot(normal);
+   // double alongNormal = rv.Dot(normal);
+   double alongNormal = Dot(rv, normal);
    // check if separating velocity
    if (alongNormal < 0) return;
 
    // TODO (werat): optimize to cool inline functions
    // smth like (restitution1 > restitution2 : restitution2 ? restitution1)
-   double e = std::min(first->restitution, second->restitution);
+   double e = MixRestitution(first->restitution, second->restitution);
 
    // calculate impulse
    double j = -(1.0 + e) * alongNormal;
@@ -174,24 +179,21 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
 
    // calculate friction impulse
    rv = second->velocity - first->velocity;
-   Vector2 t = rv - (normal * rv.Dot(normal));
+   Vector2 t = rv - (normal * Dot(rv, normal));
 
    if (t == Vector2::Zero) return;
    t.Normalize();
 
    // calculate friction coefficient
-   double sf = std::sqrt(first->static_friction * second->static_friction);
-   double df = std::sqrt(first->dynamic_friction * second->dynamic_friction);
+   double sf = MixFriction(first->friction, second->friction);
 
    // j tangent magnitude
-   double jt = -rv.Dot(t);
+   double jt = -Dot(rv, t);
    jt /= inv_mass_sum;
 
    Vector2 tangentImpulse;
-   if (std::abs(jt) < -j * sf)
-      tangentImpulse = t * jt;
-   else
-      tangentImpulse = t * j * df;
+   if (std::abs(jt) < -j * sf) tangentImpulse = t * jt;
+   else                        tangentImpulse = t * j * sf;
 
    first->velocity -= tangentImpulse * first->inv_mass;
    second->velocity += tangentImpulse * second->inv_mass;

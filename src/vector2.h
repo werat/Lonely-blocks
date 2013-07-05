@@ -27,10 +27,17 @@ public:
    double length() { return std::sqrt(x*x + y*y); }
    double lengthSquared() { return x*x + y*y; }
 
-   void Normalize();
-   Vector2 Normalized();
-
-   double Dot(const Vector2& other) { return x * other.x + y * other.y; }
+   void Normalize()
+   {
+      double ilen = 1.0 / this->length();
+      this->x *= ilen;
+      this->y *= ilen;
+   }
+   Vector2 Normalized()
+   {
+      double ilen = 1.0 / this->length();
+      return Vector2 { x * ilen, y * ilen };
+   }
 
    // TODO: maybe do all this functions inline
    Vector2 operator-() const;
@@ -46,6 +53,23 @@ public:
 
    friend std::ostream& operator<< (std::ostream& os, const Vector2& vector);
 };
+
+inline double Dot(const Vector2& a, const Vector2& b)
+{
+   return a.x * b.x + a.y * b.y;
+}
+inline double Cross(const Vector2& a, const Vector2& b)
+{
+   return a.x * b.y - a.y * b.x;
+}
+inline Vector2 Cross(const Vector2& a, float s)
+{
+   return Vector2(s * a.y, -s * a.x);
+}
+inline Vector2 Cross(float s, const Vector2& a)
+{
+   return Vector2(-s * a.y, s * a.x);
+}
 
 #endif
 

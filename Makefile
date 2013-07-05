@@ -24,8 +24,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(OBJS) -o $(BIN)\$(NAME).exe $(LFLAGS) 
 
+# TODO (werat): would fail if there is no pair .cc/.h
 # compiling other source files.
-$(OBJ)/%.o: $(SRC)/%.cc
+$(OBJ)/%.o: $(SRC)/%.cc $(SRC)/%.h
 	$(CC) $(CFLAGS) -c -s $< -o $@
 
 $(OBJS): | $(OBJ)

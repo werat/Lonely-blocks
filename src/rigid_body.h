@@ -6,6 +6,7 @@
 #include "vector2.h"
 
 #include <SDL.h>
+#include <cmath>
 
 #include <functional>
 
@@ -50,13 +51,20 @@ public:
 
    // static physics properties
    double inv_mass = 0.0;
-   double restitution = 1.0; // should be in [0; 1]
-   double static_friction = 0.1; // should be in [0; 1]
-   double dynamic_friction = 0.1; // super-friction
+   double inv_inertia = 1.0;
 
-   // dynamic physics properties
+   double restitution = 0.0; // should be in [0; 1]
+   double friction = 0.3; // should be in [0; 1]
+
+   // linear properties
    Vector2 velocity = Vector2::Zero;
-   Vector2 acceleration = Vector2::Zero;
+   Vector2 force = Vector2::Zero;
+
+   // TODO (werat): use this
+   // angular properties
+   double rotation;
+   double angular_velocity;
+   double torque;
 
    bool onGround;
    bool atCeiling;
@@ -73,7 +81,11 @@ public:
 
    SDL_Rect bounds() const  
    { 
-      return SDL_Rect { (int)std::round(position.x - width / 2), (int)std::round(position.y - height / 2), width, height }; 
+      return SDL_Rect
+      {
+         (int)std::round(position.x - width / 2), (int)std::round(position.y - height / 2),
+         width, height
+      }; 
    }
 
    const cFilter& filterData() const { return _filterData; }

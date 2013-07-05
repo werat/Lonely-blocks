@@ -60,7 +60,7 @@ void World::Init()
             }
             if (tiles_map[i][j] == 3)
             {
-                cFilter filter;
+                cFilter filter = r->filterData();
                 filter.IgnoreCategory(1 << 0);
                 r->setFilterData(filter);
             }
@@ -69,8 +69,9 @@ void World::Init()
    }
    Vector2 center = { 120, 500 };
    player = RigidBody(center, 30, 60);
-   player.inv_mass = 1.0;
-   player.restitution = 0.4;
+   player.inv_mass = 0.1;
+   player.restitution = 0.0;
+   player.friction = 0.5;
    player.onGround = true;
    physicsEngine.AttachRigidBody(&player);
 }
@@ -115,7 +116,7 @@ void World::HandleInput()
 
 void World::UpdatePlayer(float delta)
 {
-   if (input.y < 0 ) {
+   if (input.y < 0) {
       player.velocity.y += -40; // apply jumping force
    }
    if (input.x != 0 ) {

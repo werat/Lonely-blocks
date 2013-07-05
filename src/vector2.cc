@@ -6,19 +6,6 @@ const Vector2 Vector2::Zero = Vector2(0, 0);
 const Vector2 Vector2::UnitX = Vector2(1, 0); 
 const Vector2 Vector2::UnitY = Vector2(0, 1); 
 
-void Vector2::Normalize()
-{
-   double ilen = 1.0 / this->length();
-   this->x *= ilen;
-   this->y *= ilen;
-}
-
-Vector2 Vector2::Normalized()
-{
-   double ilen = 1.0 / this->length();
-   return Vector2 { x * ilen, y * ilen };
-}
-
 Vector2 Vector2::operator-() const
 {
    return Vector2(-x, -y);
