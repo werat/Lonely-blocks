@@ -21,7 +21,7 @@ public:
    Vector2() { this->x = 0; this->y = 0; }
    explicit Vector2(double d) { this->x = d; this->y = d; }
    Vector2(double x, double y) { this->x = x; this->y = y; }
-
+   
    // Copy and assignment are not necessary, let the compiler do all the work
 
    double length() { return std::sqrt(x*x + y*y); }

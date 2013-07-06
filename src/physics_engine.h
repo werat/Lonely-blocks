@@ -57,5 +57,4 @@ inline double PhysicsEngine::MixRestitution(double r1, double r2)
    return r1 > r2 ? r1 : r2;
 }
 
-
 #endif

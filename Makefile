@@ -20,14 +20,17 @@ OBJS = $(addprefix $(OBJ)/,$(CORE_OBJS))
 # top-level rule to create the program.
 all: $(NAME)
 
+
 # linking the program
 $(NAME): $(OBJS)
 	$(CC) $(OBJS) -o $(BIN)\$(NAME).exe $(LFLAGS) 
 
-# TODO (werat): would fail if there is no pair .cc/.h
+
 # compiling other source files.
-$(OBJ)/%.o: $(SRC)/%.cc $(SRC)/%.h
-	$(CC) $(CFLAGS) -c -s $< -o $@
+$(OBJ)/%.o: $(SRC)/%.cc
+	$(CC) $(CFLAGS) -MMD -c -s $< -o $@
+
+-include $(OBJ)/*.d
 
 $(OBJS): | $(OBJ)
 $(NAME): | $(BIN)
