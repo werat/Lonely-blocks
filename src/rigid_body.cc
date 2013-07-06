@@ -5,15 +5,7 @@
 #include <cmath>
 
 RigidBody::RigidBody()
-   : RigidBody(Vector2::Zero, 0, 0)
 {
-}
-
-RigidBody::RigidBody(const Vector2& position, int w, int h)
-{
-   this->position = position;
-   this->width = w;
-   this->height = h;
 }
 
 void RigidBody::setFilterData(const cFilter& filter)

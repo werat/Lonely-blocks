@@ -10,6 +10,9 @@
 
 #include <functional>
 
+// Forward declarations
+class PhysicsEngine;
+
 struct cFilter
 {
    cFilter()
@@ -35,13 +38,12 @@ struct cFilter
    void IgnoreCategory(unsigned int category) { maskBits &= ~category; }
 };
 
-// TODO (werat): store a pointer to PhysicsEngine ->
-//             - raycasting
-//             - dynamic change of static/dynamic
-
 class RigidBody 
 {
-protected:
+   friend class PhysicsEngine;
+
+private:
+   PhysicsEngine* _engine;
    cFilter _filterData;
 
 public:
@@ -74,9 +76,10 @@ public:
 
    std::function<bool(RigidBody*, RigidBody*)> onCollision;
 
-public:
+private:
    RigidBody();
-   RigidBody(const Vector2& position, int w, int h);
+
+public:
    ~RigidBody() {}
 
    SDL_Rect bounds() const  

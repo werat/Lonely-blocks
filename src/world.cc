@@ -24,20 +24,30 @@ void World::Init()
       { 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-      { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 1, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1 },
       { 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 1, 0, 0, 3, 0, 1, 0, 1, 0, 0, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 2, 0, 3, 1, 0, 0, 0, 1, 0, 1 },
-      { 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 1 },
+      { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
    };
 
-   for (int i = 0; i < n; ++i)
+   // player = physicsEngine.CreateBody();
+   // player->position = { 120, 500 };
+   // player->width = 50;
+   // player->height = 30;
+   // player->inv_mass = 0.2;
+   // player->isStatic = false;
+   // player->onGround = true;
+   // player->restitution = 0.0;
+   // player->friction = 0.5;
+
+   for (int i = 0; i < n-1; ++i)
    {
       for (int j = 0; j < m; ++j)
       {
@@ -46,10 +56,14 @@ void World::Init()
             double w = 50;
             double h = 30;
             Vector2 center = { w / 2 + w * j, h / 2 + h * i };
-            RigidBody* r = new RigidBody(center, w, h);
+
+            RigidBody* r = physicsEngine.CreateBody();
+            r->position = center;
+            r->width = w;
+            r->height = h;
             r->isStatic = true;
+
             tiles.push_back(r);
-            physicsEngine.AttachRigidBody(r);
 
             if (tiles_map[i][j] == 2)
             {
@@ -57,7 +71,10 @@ void World::Init()
                double j_h = 6;
                Vector2 j_c = { w / 2 + w * j, j_h / 2 + h * i };
 
-               auto jump_platform = new RigidBody(j_c, j_w, j_h);
+               auto jump_platform = physicsEngine.CreateBody();
+               jump_platform->position = j_c;
+               jump_platform->width = j_w;
+               jump_platform->height = j_h;
                jump_platform->isStatic = true;
                jump_platform->onCollision = [](RigidBody* self, RigidBody* other) {
                   other->velocity.y = -400;
@@ -65,7 +82,6 @@ void World::Init()
                };
 
                tiles.push_back(jump_platform);
-               physicsEngine.AttachRigidBody(jump_platform);
             }
             if (tiles_map[i][j] == 3)
             {
@@ -73,16 +89,33 @@ void World::Init()
                 filter.IgnoreCategory(1 << 0);
                 r->setFilterData(filter);
             }
+            if (tiles_map[i][j] == 4)
+            {
+               r->position += { 10, 10 };
+               r->inv_mass = 0.05;
+               r->isStatic = false;
+            }
          }
       }
    }
-   Vector2 center = { 120, 500 };
-   player = RigidBody(center, 30, 60);
-   player.inv_mass = 0.1;
-   player.restitution = 0.0;
-   player.friction = 0.5;
-   player.onGround = true;
-   physicsEngine.AttachRigidBody(&player);
+
+   player = physicsEngine.CreateBody();
+   player->position = { 120, 500 };
+   player->width = 50;
+   player->height = 30;
+   player->inv_mass = 0.2;
+   player->isStatic = false;
+   player->onGround = true;
+   player->restitution = 0.0;
+   player->friction = 0.5;
+   
+   RigidBody* floor = physicsEngine.CreateBody();
+   floor->position = { 400, 600 - 15};
+   floor->width = 800;
+   floor->height = 30;
+   floor->isStatic = true;
+   tiles.push_back(floor);
+   
 }
 void World::Update(float delta)
 {
@@ -101,9 +134,9 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_RenderDrawRect(renderer, &bounds);
    } 
 
-   if (player.onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
+   if (player->onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
    else                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
-   SDL_Rect bounds = player.bounds();
+   SDL_Rect bounds = player->bounds();
    SDL_RenderFillRect(renderer, &bounds);
    SDL_SetRenderDrawColor(renderer, 0, 225, 35, 255); // for border
    SDL_RenderDrawRect(renderer, &bounds);
@@ -119,17 +152,17 @@ void World::HandleInput()
    if (state[SDL_SCANCODE_UP]) input.y = -1;
    if (state[SDL_SCANCODE_DOWN]) input.y = 1;
 
-   if (state[SDL_SCANCODE_A]) player.position.x -= 0.3;
-   if (state[SDL_SCANCODE_D]) player.position.x += 0.3;
+   if (state[SDL_SCANCODE_A]) player->position.x -= 0.3;
+   if (state[SDL_SCANCODE_D]) player->position.x += 0.3;
 }
 
 void World::UpdatePlayer(float delta)
 {
    if (input.y < 0) {
-      player.velocity.y += -40; // apply jumping force
+      player->velocity.y += -40; // apply jumping force
    }
    if (input.x != 0 ) {
-      player.velocity.x += 1000 * delta * input.x;
+      player->velocity.x += 1000 * delta * input.x;
    }
 
    // if (input.y > 0 ) {

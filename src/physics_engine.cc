@@ -20,25 +20,24 @@ PhysicsEngine::~PhysicsEngine()
 {
 }
 
-void PhysicsEngine::AttachRigidBody(RigidBody* rigidBody)
+RigidBody* PhysicsEngine::CreateBody()
 {
-   if (rigidBody == nullptr)
-      throw std::invalid_argument("rigidBody can't be null.");
+   RigidBody* body = new RigidBody();
 
-   if (std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody) != end(_rigidBodies))
-      throw std::logic_error("rigidBody is already attached.");
-   
-   _rigidBodies.push_back(rigidBody);
+   _rigidBodies.push_back(body);
+
+   return body;
 }
-void PhysicsEngine::DetachRigidBody(RigidBody* rigidBody)
+void PhysicsEngine::DestroyBody(RigidBody* rigidBody)
 {
    if (rigidBody == nullptr)
       throw std::invalid_argument("rigidBody can't be null");
 
-   if (std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody) == end(_rigidBodies))
-      throw std::logic_error("physial is not attached.");
+   auto body_it = std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody);
+   if (body_it == end(_rigidBodies))
+      throw std::logic_error("rigidBody is not attached.");
 
-   _rigidBodies.erase(std::remove(begin(_rigidBodies), end(_rigidBodies), rigidBody), end(_rigidBodies));
+   _rigidBodies.erase(body_it);
 }
 
 
@@ -63,7 +62,9 @@ void PhysicsEngine::Update(float delta)
             // TODO (werat): make some broad phase (even if current version IS a broad phase)
             ContactData contact = CreateContactData(rigidBodyA, rigidBodyB);
             if (contact.penetration > 0 && ShouldCollide(rigidBodyA, rigidBodyB)) {
-               contacts.emplace_back(contact);
+               // check if these two bodies already contacted
+               if (std::find(begin(contacts), end(contacts), contact) == end(contacts))
+                  contacts.emplace_back(contact);
             }
          }
       }
@@ -205,11 +206,11 @@ void PhysicsEngine::CorrectPosition(const ContactData& contact)
    RigidBody* second = contact.second;
    Vector2 normal = contact.normal;
 
-   double percent = 0.2; // usually 20% to 80%
-   double slop = 0.0; // TODO (werat): do we need this slop?
+   double percent = 0.4; // usually 20% to 80%
+   double slop = 0.05; // TODO (werat): do we need this slop?
    Vector2 correction = normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
    first->position += correction * first->inv_mass;
-   second->position += correction * second->inv_mass;
+   second->position -= correction * second->inv_mass;
 
    // contact.first->position += normal * contact.penetration;
 }

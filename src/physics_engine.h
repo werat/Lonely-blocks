@@ -14,6 +14,12 @@ struct ContactData
 
    Vector2 normal;
    double penetration;
+
+   bool operator==(const ContactData& other)
+   {
+      return (first == other.first && second == other.second)
+          || (first == other.second && second == other.first);
+   }
 };
 
 class PhysicsEngine
@@ -31,8 +37,8 @@ public:
    PhysicsEngine();
    ~PhysicsEngine();
 
-   void AttachRigidBody(RigidBody* rigidBody);
-   void DetachRigidBody(RigidBody* rigidBody);
+   RigidBody* CreateBody();
+   void DestroyBody(RigidBody* rigidBody);
 
    void Update(float delta);
 
