@@ -47,28 +47,40 @@ void PhysicsEngine::Update(float delta)
    
    std::vector<ContactData> contacts;
 
+   // TODO (werat): eliminate all this "if (body->isStatic) continue;"
    for (int i = 0; i < _steps; ++i)
    {
-      // Find contacts
+      // This is BROADPHASE.
+      // Here we iterate over objects constructing pairs of potential contacts
+      // *** at the moment there are only AABBs, so we don't need narrowphase ***
+      // TODO (werat): make quad-tree
       for (auto rigidBodyA : _rigidBodies)
       {
          if (rigidBodyA->isStatic) continue;
 
-         // TODO (werat): this is bad, because with several dynamic objects we'll have pairs of contacts
          for (auto rigidBodyB : _rigidBodies)
          {
             if (rigidBodyA == rigidBodyB) continue;
 
-            // TODO (werat): make some broad phase (even if current version IS a broad phase)
             ContactData contact = CreateContactData(rigidBodyA, rigidBodyB);
-            if (contact.penetration > 0 && ShouldCollide(rigidBodyA, rigidBodyB)) {
+
+            // check if two AABBs collided and whether they pass each other's filters 
+            if (contact.penetration > 0 && ShouldCollide(rigidBodyA, rigidBodyB))
+            {
                // check if these two bodies already contacted
                if (std::find(begin(contacts), end(contacts), contact) == end(contacts))
                   contacts.emplace_back(contact);
             }
          }
       }
-      // Apply impulses
+      // Intergrate velocities
+      for (auto body : _rigidBodies)
+      {
+         if (body->isStatic) continue;
+
+         IntegrateLinearProperties(body, dt / 2.0);
+      }
+      // Resolve contacts aka apply impulses
       // for (int i = 0; i < 10; ++i) // TODO (werat): check if need more iterations
       {
          for (auto contact : contacts)
@@ -81,18 +93,15 @@ void PhysicsEngine::Update(float delta)
             ResolveContact(contact);
          }
       }
-      // Intergrate velocities TODO (werat): maybe should split in two steps
-      for (auto r : _rigidBodies)
+      // Intergrate positions and velocities
+      for (auto body : _rigidBodies)
       {
-         if (r->isStatic) continue;
+         if (body->isStatic) continue;
 
-         if (r->isGravityApplied) r->velocity += gravity * dt;
+         body->position += body->velocity * dt;
+         body->rotation += body->angular_velocity * dt;
 
-         r->velocity += r->force * r->inv_mass * dt;
-         r->angular_velocity += r->torque * r->inv_inertia * dt;
-
-         r->position += r->velocity * dt; // TODO (werat): should use more accurate intergration
-         r->rotation += r->angular_velocity * dt;
+         IntegrateLinearProperties(body, dt / 2.0);
       }
       // Correct position
       for (auto contact : contacts)
@@ -100,6 +109,13 @@ void PhysicsEngine::Update(float delta)
          CorrectPosition(contact);
       }
       contacts.clear();
+   }
+   // Clear forces
+   for (auto body : _rigidBodies)
+   {
+      if (body->isStatic) continue;
+
+      body->ClearForces();
    }
 }
 
@@ -160,7 +176,6 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
 
    Vector2 rv = second->velocity - first->velocity;
 
-   // double alongNormal = rv.Dot(normal);
    double alongNormal = Dot(rv, normal);
    // check if separating velocity
    if (alongNormal < 0) return;
@@ -199,18 +214,21 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
    first->velocity -= tangentImpulse * first->inv_mass;
    second->velocity += tangentImpulse * second->inv_mass;
 }
+void PhysicsEngine::IntegrateLinearProperties(RigidBody* body, float dt)
+{
+   if (body->isGravityApplied) body->velocity += gravity * dt;
+   body->velocity += body->force * body->inv_mass * dt;
+   body->angular_velocity += body->torque * body->inv_inertia * dt;
+}
 void PhysicsEngine::CorrectPosition(const ContactData& contact)
 {
    // let second is static
    RigidBody* first = contact.first;
    RigidBody* second = contact.second;
-   Vector2 normal = contact.normal;
 
-   double percent = 0.4; // usually 20% to 80%
-   double slop = 0.05; // TODO (werat): do we need this slop?
-   Vector2 correction = normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
+   double percent = 0.7; // usually 20% to 80%
+   double slop = 0.0; // TODO (werat): do we need this slop?
+   Vector2 correction = contact.normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
    first->position += correction * first->inv_mass;
    second->position -= correction * second->inv_mass;
-
-   // contact.first->position += normal * contact.penetration;
 }

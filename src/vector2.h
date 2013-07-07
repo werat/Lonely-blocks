@@ -39,20 +39,58 @@ public:
       return Vector2 { x * ilen, y * ilen };
    }
 
-   // TODO: maybe do all this functions inline
    Vector2 operator-() const;
-   Vector2 operator+(const Vector2& other) const;
    Vector2& operator+=(const Vector2& other);
-   Vector2 operator-(const Vector2& other) const;
    Vector2& operator-=(const Vector2& other);
-   Vector2 operator*(double mul);
    Vector2& operator*=(double mul);
-
-   bool operator==(const Vector2& other);
-   bool operator!=(const Vector2& other);
 
    friend std::ostream& operator<< (std::ostream& os, const Vector2& vector);
 };
+
+inline Vector2 Vector2::operator-() const
+{
+   return Vector2(-x, -y);
+}
+inline Vector2& Vector2::operator+=(const Vector2& other)
+{
+   this->x += other.x;
+   this->y += other.y;
+   return *this;
+}
+inline Vector2& Vector2::operator-=(const Vector2& other)
+{
+   this->x -= other.x;
+   this->y -= other.y;
+   return *this;
+}
+inline Vector2& Vector2::operator*=(double mul)
+{
+   this->x *= mul;
+   this->y *= mul;
+   return *this;
+}
+
+inline Vector2 operator+(const Vector2& a, const Vector2& b)
+{
+   return Vector2(a.x + b.x, a.y + b.y);
+}
+inline Vector2 operator-(const Vector2& a, const Vector2& b)
+{
+   return Vector2(a.x - b.x, a.y - b.y);
+}
+inline Vector2 operator*(const Vector2& a, double mul)
+{
+   return Vector2(a.x * mul, a.y * mul);
+}
+
+inline bool operator==(const Vector2& a, const Vector2& b)
+{
+   return a.x == b.x && a.y == b.y;
+}
+inline bool operator!=(const Vector2& a, const Vector2& b)
+{
+   return a.x != b.x || a.y != b.y;
+}
 
 inline double Dot(const Vector2& a, const Vector2& b)
 {

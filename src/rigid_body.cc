@@ -8,9 +8,23 @@ RigidBody::RigidBody()
 {
 }
 
+void RigidBody::ClearForces()
+{
+   this->force = Vector2::Zero;
+}
+
 void RigidBody::setFilterData(const cFilter& filter)
 {
    _filterData = filter;
+}
+
+void RigidBody::ApplyImpulse(const Vector2& impulse)
+{
+   this->velocity += impulse * this->inv_mass;
+}
+void RigidBody::ApplyForce(const Vector2& force)
+{
+   this->force += force;
 }
 
 bool RigidBody::Intersects(const RigidBody* other, Vector2* resolution)

@@ -46,6 +46,8 @@ private:
    PhysicsEngine* _engine;
    cFilter _filterData;
 
+   Vector2 force = Vector2::Zero;
+
 public:
    // positional properties
    Vector2 position;
@@ -60,9 +62,8 @@ public:
 
    // linear properties
    Vector2 velocity = Vector2::Zero;
-   Vector2 force = Vector2::Zero;
 
-   // TODO (werat): use this
+   // TODO (werat): somewhere in future we will use this
    // angular properties
    double rotation;
    double angular_velocity;
@@ -76,8 +77,10 @@ public:
 
    std::function<bool(RigidBody*, RigidBody*)> onCollision;
 
-private:
+protected:
    RigidBody();
+
+   void ClearForces();
 
 public:
    ~RigidBody() {}
@@ -93,6 +96,9 @@ public:
 
    const cFilter& filterData() const { return _filterData; }
    void setFilterData(const cFilter& filter);
+
+   void ApplyImpulse(const Vector2& impulse);
+   void ApplyForce(const Vector2& force);
 
    bool Intersects(const RigidBody* other, Vector2* resolution = nullptr);
 };

@@ -33,6 +33,7 @@ private:
 
 public:
    Vector2 gravity;
+   
 public:
    PhysicsEngine();
    ~PhysicsEngine();
@@ -47,6 +48,7 @@ private:
 
    ContactData CreateContactData(RigidBody* first, RigidBody* second);
    void ResolveContact(const ContactData& contact);
+   void IntegrateLinearProperties(RigidBody* body, float dt);
    void CorrectPosition(const ContactData& contact);
 
    double MixFriction(double f1, double f2);

@@ -37,16 +37,6 @@ void World::Init()
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
    };
 
-   // player = physicsEngine.CreateBody();
-   // player->position = { 120, 500 };
-   // player->width = 50;
-   // player->height = 30;
-   // player->inv_mass = 0.2;
-   // player->isStatic = false;
-   // player->onGround = true;
-   // player->restitution = 0.0;
-   // player->friction = 0.5;
-
    for (int i = 0; i < n-1; ++i)
    {
       for (int j = 0; j < m; ++j)
@@ -91,8 +81,10 @@ void World::Init()
             }
             if (tiles_map[i][j] == 4)
             {
+               platform = r;
                r->position += { 10, 10 };
-               r->inv_mass = 0.05;
+               r->inv_mass = 0.2;
+               r->friction = 0.5;
                r->isStatic = false;
             }
          }
@@ -101,14 +93,13 @@ void World::Init()
 
    player = physicsEngine.CreateBody();
    player->position = { 120, 500 };
-   player->width = 50;
-   player->height = 30;
+   player->width = 30;
+   player->height = 50;
    player->inv_mass = 0.2;
+   player->friction = 0.5;
    player->isStatic = false;
    player->onGround = true;
-   player->restitution = 0.0;
-   player->friction = 0.5;
-   
+
    RigidBody* floor = physicsEngine.CreateBody();
    floor->position = { 400, 600 - 15};
    floor->width = 800;
@@ -159,23 +150,15 @@ void World::HandleInput()
 void World::UpdatePlayer(float delta)
 {
    if (input.y < 0) {
-      player->velocity.y += -40; // apply jumping force
+      // player->velocity.y += -40; // apply jumping force
+      player->ApplyForce({0, -10000});
    }
    if (input.x != 0 ) {
-      player->velocity.x += 1000 * delta * input.x;
+      // player->velocity.x += 1000 * delta * input.x;
+      player->ApplyForce({5000 * input.x, 0});
    }
 
-   // if (input.y > 0 ) {
-   //    std::cout << "==============================" << std::endl;
-   //    std::cout << "Position = " << player.position << std::endl;
-   //    std::cout << "Left = " << player.bounds().x << std::endl;
-   //    std::cout << "Left calc = " << player.position.x - player.width / 2 << std::endl;
-   //    std::cout << "Left calc(int) = " << (int)std::round(player.position.x - player.width / 2) << std::endl;
-
-   //    std::cout << "Position.x = " << player.position.x << std::endl;
-   //    std::cout << "width = " << player.width << std::endl;
-   //    std::cout << "width / 2 = " << player.width / 2 << std::endl;
-   // }
-
-   // player.position.x += input.x * 200 * delta;
+   auto state = SDL_GetKeyboardState(NULL);
+   if (state[SDL_SCANCODE_J]) platform->ApplyForce({-5000, 0});
+   if (state[SDL_SCANCODE_K]) platform->ApplyForce({5000, 0});
 }
