@@ -24,8 +24,8 @@ public:
    
    // Copy and assignment are not necessary, let the compiler do all the work
 
-   double length() { return std::sqrt(x*x + y*y); }
-   double lengthSquared() { return x*x + y*y; }
+   double length() const { return std::sqrt(x*x + y*y); }
+   double lengthSquared() const { return x*x + y*y; }
 
    void Normalize()
    {
@@ -33,7 +33,7 @@ public:
       this->x *= ilen;
       this->y *= ilen;
    }
-   Vector2 Normalized()
+   Vector2 Normalized() const
    {
       double ilen = 1.0 / this->length();
       return Vector2 { x * ilen, y * ilen };
@@ -79,6 +79,10 @@ inline Vector2 operator-(const Vector2& a, const Vector2& b)
    return Vector2(a.x - b.x, a.y - b.y);
 }
 inline Vector2 operator*(const Vector2& a, double mul)
+{
+   return Vector2(a.x * mul, a.y * mul);
+}
+inline Vector2 operator*(double mul, const Vector2& a)
 {
    return Vector2(a.x * mul, a.y * mul);
 }

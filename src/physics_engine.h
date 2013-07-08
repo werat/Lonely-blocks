@@ -5,6 +5,7 @@
 
 #include "rigid_body.h"
 
+#include <cmath>
 #include <vector>
 
 struct ContactData

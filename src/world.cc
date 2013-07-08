@@ -49,9 +49,9 @@ void World::Init()
 
             RigidBody* r = physicsEngine.CreateBody();
             r->position = center;
-            r->width = w;
-            r->height = h;
-            r->isStatic = true;
+            r->half_width = w / 2;
+            r->half_height = h / 2;
+            r->setType(r_staticBody);
 
             tiles.push_back(r);
 
@@ -63,12 +63,11 @@ void World::Init()
 
                auto jump_platform = physicsEngine.CreateBody();
                jump_platform->position = j_c;
-               jump_platform->width = j_w;
-               jump_platform->height = j_h;
-               jump_platform->isStatic = true;
+               jump_platform->half_width = j_w / 2;
+               jump_platform->half_height = j_h / 2;
+               jump_platform->setType(r_staticBody);
                jump_platform->onCollision = [](RigidBody* self, RigidBody* other) {
                   other->velocity.y = -400;
-                  return true;
                };
 
                tiles.push_back(jump_platform);
@@ -83,9 +82,9 @@ void World::Init()
             {
                platform = r;
                r->position += { 10, 10 };
-               r->inv_mass = 0.2;
+               r->inv_mass = 1.0 / 5;
                r->friction = 0.5;
-               r->isStatic = false;
+               r->setType(r_dynamicBody);
             }
          }
       }
@@ -93,21 +92,28 @@ void World::Init()
 
    player = physicsEngine.CreateBody();
    player->position = { 120, 500 };
-   player->width = 30;
-   player->height = 50;
-   player->inv_mass = 0.2;
+   player->half_width = 30 / 2;
+   player->half_height = 50 / 2;
+   player->inv_mass = 1.0 / 5;
    player->friction = 0.5;
-   player->isStatic = false;
-   player->onGround = true;
+   player->setType(r_dynamicBody);
 
    RigidBody* floor = physicsEngine.CreateBody();
    floor->position = { 400, 600 - 15};
-   floor->width = 800;
-   floor->height = 30;
-   floor->isStatic = true;
+   floor->half_width = 800 / 2;
+   floor->half_height = 30 / 2;
+   floor->setType(r_staticBody);
    tiles.push_back(floor);
-   
+
+   moving = physicsEngine.CreateBody();
+   moving->position = { 260, 300 };
+   moving->half_width = 100 / 2;
+   moving->half_height = 30 / 2;
+   moving->velocity.x = 100;
+   moving->setType(r_kinematicBody);
+   tiles.push_back(moving);   
 }
+
 void World::Update(float delta)
 {
    HandleInput();
@@ -125,9 +131,8 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_RenderDrawRect(renderer, &bounds);
    } 
 
-   if (player->onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
-   else                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
    SDL_Rect bounds = player->bounds();
+   SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
    SDL_RenderFillRect(renderer, &bounds);
    SDL_SetRenderDrawColor(renderer, 0, 225, 35, 255); // for border
    SDL_RenderDrawRect(renderer, &bounds);
@@ -161,4 +166,7 @@ void World::UpdatePlayer(float delta)
    auto state = SDL_GetKeyboardState(NULL);
    if (state[SDL_SCANCODE_J]) platform->ApplyForce({-5000, 0});
    if (state[SDL_SCANCODE_K]) platform->ApplyForce({5000, 0});
+
+   if (moving->position.x - moving->half_width < 0) moving->velocity.x = 100;
+   if (moving->position.x + moving->half_width > 800) moving->velocity.x = -100;
 }

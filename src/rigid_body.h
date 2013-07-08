@@ -34,8 +34,18 @@ struct cFilter
    // filtering always wins against the mask bits.
    int groupIndex;
 
-   void AcceptCategory(unsigned int category) { maskBits |= category; }
-   void IgnoreCategory(unsigned int category) { maskBits &= ~category; }
+   void AcceptCategory(unsigned int categoryMask) { maskBits |= categoryMask; }
+   void IgnoreCategory(unsigned int categoryMask) { maskBits &= ~categoryMask; }
+};
+
+// static: zero mass, zero velocity, may be manually moved
+// kinematic: zero mass, non-zero velocity set by user, moved by engine
+// dynamic: positive mass, non-zero velocity determined by forces, moved by engine
+enum rBodyType 
+{
+   r_staticBody,
+   r_kinematicBody,
+   r_dynamicBody
 };
 
 class RigidBody 
@@ -44,14 +54,16 @@ class RigidBody
 
 private:
    PhysicsEngine* _engine;
-   cFilter _filterData;
 
-   Vector2 force = Vector2::Zero;
+   cFilter _filterData;
+   rBodyType _type = r_staticBody;
+
+   Vector2 _force = Vector2::Zero;
 
 public:
    // positional properties
    Vector2 position;
-   int width, height;
+   double half_width, half_height;
 
    // static physics properties
    double inv_mass = 0.0;
@@ -69,13 +81,9 @@ public:
    double angular_velocity;
    double torque;
 
-   bool onGround;
-   bool atCeiling;
+   double gravity_scale = 1.0;
 
-   bool isStatic = false;
-   bool isGravityApplied = true;
-
-   std::function<bool(RigidBody*, RigidBody*)> onCollision;
+   std::function<void(RigidBody*, RigidBody*)> onCollision;
 
 protected:
    RigidBody();
@@ -85,14 +93,21 @@ protected:
 public:
    ~RigidBody() {}
 
+   double width() const { return half_width * 2; }
+   double height() const { return half_height * 2; }
+
+   // TODO (werat): move this, it's needed for drawing rectangles only
    SDL_Rect bounds() const  
    { 
       return SDL_Rect
       {
-         (int)std::round(position.x - width / 2), (int)std::round(position.y - height / 2),
-         width, height
+         (int)std::round(position.x - half_width), (int)std::round(position.y - half_height),
+         (int)std::round(width()), (int)std::round(height())
       }; 
    }
+
+   rBodyType type() const { return _type; }
+   void setType(rBodyType type);
 
    const cFilter& filterData() const { return _filterData; }
    void setFilterData(const cFilter& filter);
@@ -101,6 +116,7 @@ public:
    void ApplyForce(const Vector2& force);
 
    bool Intersects(const RigidBody* other, Vector2* resolution = nullptr);
+   bool ContainsPoint(const Vector2& point);
 };
 
 #endif

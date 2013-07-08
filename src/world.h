@@ -15,6 +15,7 @@ private:
    std::vector<RigidBody*> tiles;
    RigidBody* player;
    RigidBody* platform;
+   RigidBody* moving;
    
    Vector2 input;
 

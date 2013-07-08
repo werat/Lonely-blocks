@@ -47,7 +47,7 @@ void PhysicsEngine::Update(float delta)
    
    std::vector<ContactData> contacts;
 
-   // TODO (werat): eliminate all this "if (body->isStatic) continue;"
+   // TODO (werat): eliminate all this "if (body->type() == r_staticBody) continue;"
    for (int i = 0; i < _steps; ++i)
    {
       // This is BROADPHASE.
@@ -56,7 +56,7 @@ void PhysicsEngine::Update(float delta)
       // TODO (werat): make quad-tree
       for (auto rigidBodyA : _rigidBodies)
       {
-         if (rigidBodyA->isStatic) continue;
+         if (rigidBodyA->type() != r_dynamicBody) continue;
 
          for (auto rigidBodyB : _rigidBodies)
          {
@@ -76,8 +76,6 @@ void PhysicsEngine::Update(float delta)
       // Intergrate velocities
       for (auto body : _rigidBodies)
       {
-         if (body->isStatic) continue;
-
          IntegrateLinearProperties(body, dt / 2.0);
       }
       // Resolve contacts aka apply impulses
@@ -96,7 +94,7 @@ void PhysicsEngine::Update(float delta)
       // Intergrate positions and velocities
       for (auto body : _rigidBodies)
       {
-         if (body->isStatic) continue;
+         if (body->type() == r_staticBody) continue;
 
          body->position += body->velocity * dt;
          body->rotation += body->angular_velocity * dt;
@@ -113,7 +111,7 @@ void PhysicsEngine::Update(float delta)
    // Clear forces
    for (auto body : _rigidBodies)
    {
-      if (body->isStatic) continue;
+      if (body->type() == r_staticBody) continue;
 
       body->ClearForces();
    }
@@ -145,8 +143,8 @@ ContactData PhysicsEngine::CreateContactData(RigidBody* first, RigidBody* second
 
    Vector2 n = second->position - first->position;
 
-   double x_overlap = first->width / 2 + second->width / 2 - std::abs(n.x);
-   double y_overlap = first->height / 2 + second->height / 2 - std::abs(n.y);
+   double x_overlap = first->half_width + second->half_width - std::abs(n.x);
+   double y_overlap = first->half_height + second->half_height - std::abs(n.y);
 
    if (x_overlap > 0 && y_overlap > 0)
    {
@@ -216,9 +214,10 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
 }
 void PhysicsEngine::IntegrateLinearProperties(RigidBody* body, float dt)
 {
-   if (body->isGravityApplied) body->velocity += gravity * dt;
-   body->velocity += body->force * body->inv_mass * dt;
-   body->angular_velocity += body->torque * body->inv_inertia * dt;
+   if (body->type() == r_staticBody || body->type() == r_kinematicBody) return;
+
+   body->velocity += (body->_force * body->inv_mass + gravity * body->gravity_scale) * dt;
+   // body->angular_velocity += body->torque * body->inv_inertia * dt;
 }
 void PhysicsEngine::CorrectPosition(const ContactData& contact)
 {
