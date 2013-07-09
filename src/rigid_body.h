@@ -67,19 +67,12 @@ public:
 
    // static physics properties
    double inv_mass = 0.0;
-   double inv_inertia = 1.0;
 
    double restitution = 0.0; // should be in [0; 1]
    double friction = 0.3; // should be in [0; 1]
 
    // linear properties
    Vector2 velocity = Vector2::Zero;
-
-   // TODO (werat): somewhere in future we will use this
-   // angular properties
-   double rotation;
-   double angular_velocity;
-   double torque;
 
    double gravity_scale = 1.0;
 

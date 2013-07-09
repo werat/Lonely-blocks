@@ -38,12 +38,87 @@ void PhysicsEngine::DestroyBody(RigidBody* rigidBody)
       throw std::logic_error("rigidBody is not attached.");
 
    _rigidBodies.erase(body_it);
+   delete rigidBody;
+}
+
+bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
+{
+   double Max_Distance = input.max_distance > 0 
+                           ? input.max_distance 
+                           : std::numeric_limits<double>::max();
+
+   RigidBody* out_body = nullptr;
+   double out_distance = std::numeric_limits<double>::max();
+   Vector2 out_normal;
+
+   Vector2 inv_d = { 1.0 / input.direction.x, 1.0 / input.direction.y };
+
+   for (auto b : _rigidBodies)
+   {
+      if (b->ContainsPoint(input.origin))
+      {
+         // Ignore body if origin inside it
+         continue;
+      }
+
+      double tmin = 0.0;
+      double tmax = Max_Distance;
+      Vector2 normal;
+
+
+      double tx1 = (b->position.x - b->half_width - input.origin.x) * inv_d.x;
+      double tx2 = (b->position.x + b->half_width - input.origin.x) * inv_d.x;
+
+      double txmin = std::min(tx1, tx2);
+      double txmax = std::max(tx1, tx2);
+
+      if (txmin > tmin) 
+      {
+         tmin = txmin;
+         normal = { tx1 > tx2 ? 1.0 : -1.0, 0 };
+      }
+      if (txmax < tmax) tmax = txmax;
+
+      if (tmin > tmax) continue;
+
+      double ty1 = (b->position.y - b->half_height - input.origin.y) * inv_d.y;
+      double ty2 = (b->position.y + b->half_height - input.origin.y) * inv_d.y;
+
+      double tymin = std::min(ty1, ty2);
+      double tymax = std::max(ty1, ty2);
+
+      if (tymin > tmin) 
+      {
+         tmin = tymin;
+         normal = { 0, ty1 > ty2 ? 1.0 : -1.0 };
+      }
+      if (tymax < tmax) tmax = tymax;
+
+      if (tmin > tmax) continue;
+
+      // intersection with ray occured, check if this object is nearer
+      if (tmin < out_distance)
+      {
+         out_body = b;
+         out_distance = tmin;
+         out_normal = normal;
+      }
+   }
+   bool success = out_body != nullptr;
+   if (success)
+   {
+      output->body = out_body;
+      output->contact_point = input.origin + out_distance * input.direction;
+      output->normal = out_normal;
+      output->distance = out_distance;
+   }
+   return success;
 }
 
 
 void PhysicsEngine::Update(float delta)
 {
-   const double dt = delta / _steps; // delta is fixed, otherwise we should fix this
+   const double dt = delta / _steps; // delta is fixed, so everything works fine
    
    std::vector<ContactData> contacts;
 
@@ -97,7 +172,6 @@ void PhysicsEngine::Update(float delta)
          if (body->type() == r_staticBody) continue;
 
          body->position += body->velocity * dt;
-         body->rotation += body->angular_velocity * dt;
 
          IntegrateLinearProperties(body, dt / 2.0);
       }
@@ -175,18 +249,16 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
    Vector2 rv = second->velocity - first->velocity;
 
    double alongNormal = Dot(rv, normal);
-   // check if separating velocity
+   // check if objects moving away from each other
    if (alongNormal < 0) return;
 
-   // TODO (werat): optimize to cool inline functions
-   // smth like (restitution1 > restitution2 : restitution2 ? restitution1)
+   // calculate restitution coefficient
    double e = MixRestitution(first->restitution, second->restitution);
 
    // calculate impulse
-   double j = -(1.0 + e) * alongNormal;
-   j /= inv_mass_sum;
+   double j = -(1.0 + e) * alongNormal / inv_mass_sum;
 
-   // apply impulse
+   // apply impulse along collision normal
    Vector2 impulse = normal * j;
    first->velocity -= impulse * first->inv_mass;
    second->velocity += impulse * second->inv_mass;
@@ -217,11 +289,9 @@ void PhysicsEngine::IntegrateLinearProperties(RigidBody* body, float dt)
    if (body->type() == r_staticBody || body->type() == r_kinematicBody) return;
 
    body->velocity += (body->_force * body->inv_mass + gravity * body->gravity_scale) * dt;
-   // body->angular_velocity += body->torque * body->inv_inertia * dt;
 }
 void PhysicsEngine::CorrectPosition(const ContactData& contact)
 {
-   // let second is static
    RigidBody* first = contact.first;
    RigidBody* second = contact.second;
 

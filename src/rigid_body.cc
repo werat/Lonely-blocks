@@ -19,7 +19,7 @@ void RigidBody::setType(rBodyType type)
 
    this->_type = type;
 
-   if (this->_type == r_kinematicBody || this->_type == r_staticBody)
+   if (this->_type == r_staticBody || this->_type == r_kinematicBody)
    {
       this->inv_mass = 0.0;
    }
@@ -44,7 +44,7 @@ void RigidBody::ApplyImpulse(const Vector2& impulse)
 void RigidBody::ApplyForce(const Vector2& force)
 {
    if (this->_type != r_dynamicBody) return;
-   
+
    this->_force += force;
 }
 
@@ -52,8 +52,6 @@ bool RigidBody::Intersects(const RigidBody* other, Vector2* resolution)
 {
    Vector2 n = other->position - this->position;
 
-   // TODO (werat): can be optimized
-   // calculate y_overlap after checking x_overlap > 0
    double x_overlap = this->half_width + other->half_width - std::abs(n.x);
    double y_overlap = this->half_height + other->half_height - std::abs(n.y);
 
@@ -67,10 +65,10 @@ bool RigidBody::Intersects(const RigidBody* other, Vector2* resolution)
 }
 bool RigidBody::ContainsPoint(const Vector2& point)
 {
-   bool containsX = (point.x > this->position.x - this->half_width)
-                 && (point.x < this->position.x + this->half_width);
-   bool containsY = (point.y > this->position.y - this->half_height)
-                 && (point.y < this->position.y + this->half_height);
+   bool containsX = (point.x >= this->position.x - this->half_width)
+                 && (point.x <= this->position.x + this->half_width);
+   bool containsY = (point.y >= this->position.y - this->half_height)
+                 && (point.y <= this->position.y + this->half_height);
 
    return containsX && containsY;
 }

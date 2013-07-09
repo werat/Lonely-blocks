@@ -23,6 +23,20 @@ struct ContactData
    }
 };
 
+struct RaycastIn
+{
+   Vector2 origin;
+   Vector2 direction;
+   double max_distance = 0.0; // 0 or less  for infinite ray
+};
+struct RaycastOut
+{
+   RigidBody* body;
+   Vector2 contact_point;
+   Vector2 normal;
+   double distance;
+};
+
 class PhysicsEngine
 {
 private:
@@ -41,6 +55,8 @@ public:
 
    RigidBody* CreateBody();
    void DestroyBody(RigidBody* rigidBody);
+
+   bool Raycast(const RaycastIn& input, RaycastOut* output);
 
    void Update(float delta);
 

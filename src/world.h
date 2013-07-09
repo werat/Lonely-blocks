@@ -16,6 +16,11 @@ private:
    RigidBody* player;
    RigidBody* platform;
    RigidBody* moving;
+
+   std::vector<Vector2> points;
+   std::vector<Vector2> normals;
+
+   bool draw_ray = false;
    
    Vector2 input;
 

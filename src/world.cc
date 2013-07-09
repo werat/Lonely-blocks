@@ -136,6 +136,22 @@ void World::Render(float delta, SDL_Renderer *renderer)
    SDL_RenderFillRect(renderer, &bounds);
    SDL_SetRenderDrawColor(renderer, 0, 225, 35, 255); // for border
    SDL_RenderDrawRect(renderer, &bounds);
+
+   if (draw_ray)
+   {
+      for (size_t i = 0; i < points.size() - 1; ++i)
+      {
+         Vector2 from = points[i];
+         Vector2 to = points[i+1];
+         SDL_SetRenderDrawColor(renderer, 0, 225, 35, 255); // for border
+         SDL_RenderDrawLine(renderer, from.x, from.y, to.x, to.y);
+
+         Vector2 to_normal = to + normals[i] * 10;
+         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+         SDL_RenderDrawLine(renderer, to.x, to.y, to_normal.x, to_normal.y);
+      }
+
+   }
 }
 
 void World::HandleInput()
@@ -155,11 +171,9 @@ void World::HandleInput()
 void World::UpdatePlayer(float delta)
 {
    if (input.y < 0) {
-      // player->velocity.y += -40; // apply jumping force
       player->ApplyForce({0, -10000});
    }
    if (input.x != 0 ) {
-      // player->velocity.x += 1000 * delta * input.x;
       player->ApplyForce({5000 * input.x, 0});
    }
 
@@ -169,4 +183,67 @@ void World::UpdatePlayer(float delta)
 
    if (moving->position.x - moving->half_width < 0) moving->velocity.x = 100;
    if (moving->position.x + moving->half_width > 800) moving->velocity.x = -100;
+
+   // Test raycast
+   int mx, my;
+   auto m_state = SDL_GetMouseState(&mx, &my);
+   if (m_state & SDL_BUTTON(1))
+   {
+      points.clear();
+      normals.clear();
+
+      Vector2 from = player->position;
+      Vector2 to = { (double)mx, (double)my };
+
+      points.push_back(from);
+
+      RaycastOut out;
+      RaycastIn in;
+      in.origin = from;
+      in.direction = (to - from).Normalized();
+
+      std::cout << "START RAYCAST" << std::endl;
+      for (int i = 0; i < 5; ++i)
+      {
+         if (physicsEngine.Raycast(in, &out))
+         {
+            std::cout << out.contact_point << std::endl;
+            points.push_back(out.contact_point);
+            normals.push_back(out.normal);
+
+            in.origin = out.contact_point;
+
+            Vector2 v = in.direction;
+            // Vector2 l = Cross(1.0, out.normal);
+            Vector2 reflection = 2 * Dot(v, out.normal) * out.normal - v;
+            in.direction = -reflection;
+         }
+         else
+         {
+            to = from + in.max_distance * in.direction;
+            points.push_back(to);
+            break;
+         }
+      }
+
+      // from = player->position;
+      // to = { (double)mx, (double)my };
+
+      // RaycastOut out;
+      // RaycastIn in;
+      // in.origin = from;
+      // in.direction = (to - from).Normalized();
+
+      // if (physicsEngine.Raycast(in, &out))
+      // {
+      //    to = out.contact_point;
+      //    normal = out.normal;
+      // }
+      // else
+      // {
+      //    to = from + in.max_distance * in.direction;
+      //    normal = Vector2::Zero;
+      // }
+      draw_ray = true;
+   }
 }
