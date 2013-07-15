@@ -1,7 +1,9 @@
 // @werat
 
+#include "game_object.h"
 #include "rigid_body.h"
 #include "physics_engine.h"
+#include "physics_component.h"
 
 #include <SDL.h>
 
@@ -13,9 +15,11 @@ private:
    PhysicsEngine physicsEngine;
    
    std::vector<RigidBody*> tiles;
-   RigidBody* player;
+   
    RigidBody* platform;
-   RigidBody* moving;
+   RigidBody* moving, *elevator;
+
+   GameObject* g_player;
 
    std::vector<Vector2> points;
    std::vector<Vector2> normals;
@@ -40,4 +44,6 @@ public:
 private:
    void HandleInput();
    void UpdatePlayer(float delta);
+
+   SDL_Rect Bounds(RigidBody* body);
 };

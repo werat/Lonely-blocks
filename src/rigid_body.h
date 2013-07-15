@@ -5,20 +5,21 @@
 
 #include "vector2.h"
 
-#include <SDL.h>
 #include <cmath>
 
 #include <functional>
 
 // Forward declarations
 class PhysicsEngine;
+struct CollisionInfo;
+class GameObject;
 
 struct cFilter
 {
    cFilter()
    {
       categoryBits = 1 << 0; // 0x00000001
-      maskBits = ~0;         // 0xFFFFFFFF
+      maskBits = 0xFFFFFFFF; // accept all categories
       groupIndex = 0;
    }
 
@@ -53,8 +54,6 @@ class RigidBody
    friend class PhysicsEngine;
 
 private:
-   PhysicsEngine* _engine;
-
    cFilter _filterData;
    rBodyType _type = r_staticBody;
 
@@ -76,9 +75,12 @@ public:
 
    double gravity_scale = 1.0;
 
-   std::function<void(RigidBody*, RigidBody*)> onCollision;
+   std::function<void(const CollisionInfo&)> onCollision;
 
-protected:
+   // can't be null, as rigidbody is always attached to GameObject via PhysicsComponent
+   GameObject* gameObject;
+
+private:
    RigidBody();
 
    void ClearForces();
@@ -89,24 +91,19 @@ public:
    double width() const { return half_width * 2; }
    double height() const { return half_height * 2; }
 
-   // TODO (werat): move this, it's needed for drawing rectangles only
-   SDL_Rect bounds() const  
-   { 
-      return SDL_Rect
-      {
-         (int)std::round(position.x - half_width), (int)std::round(position.y - half_height),
-         (int)std::round(width()), (int)std::round(height())
-      }; 
-   }
-
    rBodyType type() const { return _type; }
    void setType(rBodyType type);
 
    const cFilter& filterData() const { return _filterData; }
    void setFilterData(const cFilter& filter);
 
+   double mass() const { return 1.0 / inv_mass;}
+   void setMass(double mass);
+
    void ApplyImpulse(const Vector2& impulse);
    void ApplyForce(const Vector2& force);
+
+   bool ShouldCollide(const RigidBody* other);
 
    bool Intersects(const RigidBody* other, Vector2* resolution = nullptr);
    bool ContainsPoint(const Vector2& point);

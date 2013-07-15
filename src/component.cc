@@ -1,0 +1,3 @@
+// @werat
+
+#include "component.h"

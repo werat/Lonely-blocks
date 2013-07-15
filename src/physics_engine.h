@@ -23,11 +23,21 @@ struct ContactData
    }
 };
 
+struct CollisionInfo
+{
+   RigidBody* self;
+   RigidBody* other;
+
+   Vector2 normal;
+   Vector2 moveDirection;
+};
+
 struct RaycastIn
 {
    Vector2 origin;
    Vector2 direction;
-   double max_distance = 0.0; // 0 or less  for infinite ray
+   double max_distance = 0.0; // 0.0 or less the for infinite ray
+   unsigned int categoryMask = 0xFFFFFFFF; // accept all categoties 
 };
 struct RaycastOut
 {
@@ -42,7 +52,7 @@ class PhysicsEngine
 private:
    // _steps - number of steps we take during one usual Update(delta)
    // dt would be (delta / _steps) if delta is fixed
-   const int _steps = 5;
+   int _steps = 5;
 
    std::vector<RigidBody*> _rigidBodies;
 
@@ -56,13 +66,11 @@ public:
    RigidBody* CreateBody();
    void DestroyBody(RigidBody* rigidBody);
 
-   bool Raycast(const RaycastIn& input, RaycastOut* output);
+   bool Raycast(const RaycastIn& input, RaycastOut* output = nullptr);
 
    void Update(float delta);
 
 private:
-   bool ShouldCollide(RigidBody* first, RigidBody* second);
-
    ContactData CreateContactData(RigidBody* first, RigidBody* second);
    void ResolveContact(const ContactData& contact);
    void IntegrateLinearProperties(RigidBody* body, float dt);

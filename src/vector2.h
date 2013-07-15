@@ -27,15 +27,22 @@ public:
    double length() const { return std::sqrt(x*x + y*y); }
    double lengthSquared() const { return x*x + y*y; }
 
-   void Normalize()
+   double Normalize()
    {
-      double ilen = 1.0 / this->length();
+      double len = length();
+      if (len == 0.0) return 0.0;
+
+      double ilen = 1.0 / len;
       this->x *= ilen;
       this->y *= ilen;
+      return len;
    }
    Vector2 Normalized() const
    {
-      double ilen = 1.0 / this->length();
+      double len = length();
+      if (len == 0) return Vector2::Zero;
+      
+      double ilen = 1.0 / len;
       return Vector2 { x * ilen, y * ilen };
    }
 

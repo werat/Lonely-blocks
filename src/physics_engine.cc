@@ -31,11 +31,11 @@ RigidBody* PhysicsEngine::CreateBody()
 void PhysicsEngine::DestroyBody(RigidBody* rigidBody)
 {
    if (rigidBody == nullptr)
-      throw std::invalid_argument("rigidBody can't be null");
+      throw std::invalid_argument("The rigidBody argument can't be null.");
 
    auto body_it = std::find(begin(_rigidBodies), end(_rigidBodies), rigidBody);
    if (body_it == end(_rigidBodies))
-      throw std::logic_error("rigidBody is not attached.");
+      throw std::logic_error("The rigidBody is not attached.");
 
    _rigidBodies.erase(body_it);
    delete rigidBody;
@@ -55,46 +55,73 @@ bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
 
    for (auto b : _rigidBodies)
    {
+      if ((b->filterData().categoryBits & input.categoryMask) == 0)
+      {
+         // Ingore body, as it's
+         continue;
+      }
       if (b->ContainsPoint(input.origin))
       {
          // Ignore body if origin inside it
          continue;
       }
 
+      // Real-Time Collision Detection, p179
+
       double tmin = 0.0;
       double tmax = Max_Distance;
       Vector2 normal;
 
-
-      double tx1 = (b->position.x - b->half_width - input.origin.x) * inv_d.x;
-      double tx2 = (b->position.x + b->half_width - input.origin.x) * inv_d.x;
-
-      double txmin = std::min(tx1, tx2);
-      double txmax = std::max(tx1, tx2);
-
-      if (txmin > tmin) 
+      // check for X-axis
+      if (input.direction.x == 0.0) // TODO (werat): |x| < EPSILON
       {
-         tmin = txmin;
-         normal = { tx1 > tx2 ? 1.0 : -1.0, 0 };
+         // slight modification from the original alrotithm: non-strict comparison instead of strict
+         if (b->position.x - b->half_width >= input.origin.x
+          || b->position.x + b->half_width <= input.origin.x)
+            continue;
       }
-      if (txmax < tmax) tmax = txmax;
-
-      if (tmin > tmax) continue;
-
-      double ty1 = (b->position.y - b->half_height - input.origin.y) * inv_d.y;
-      double ty2 = (b->position.y + b->half_height - input.origin.y) * inv_d.y;
-
-      double tymin = std::min(ty1, ty2);
-      double tymax = std::max(ty1, ty2);
-
-      if (tymin > tmin) 
+      else
       {
-         tmin = tymin;
-         normal = { 0, ty1 > ty2 ? 1.0 : -1.0 };
-      }
-      if (tymax < tmax) tmax = tymax;
+         double tx1 = (b->position.x - b->half_width - input.origin.x) * inv_d.x;
+         double tx2 = (b->position.x + b->half_width - input.origin.x) * inv_d.x;
 
-      if (tmin > tmax) continue;
+         double txmin = std::min(tx1, tx2);
+         double txmax = std::max(tx1, tx2);
+
+         if (txmin > tmin) 
+         {
+            tmin = txmin;
+            normal = { tx1 > tx2 ? 1.0 : -1.0, 0 };
+         }
+         if (txmax < tmax) tmax = txmax;
+
+         if (tmin > tmax) continue;
+      }
+
+      // check for Y-axis
+      if (input.direction.y == 0.0) // TODO (werat): |y| < EPSILON
+      {
+         if (b->position.y - b->half_height >= input.origin.y
+          || b->position.y + b->half_height <= input.origin.y)
+            continue;
+      }
+      else
+      {
+         double ty1 = (b->position.y - b->half_height - input.origin.y) * inv_d.y;
+         double ty2 = (b->position.y + b->half_height - input.origin.y) * inv_d.y;
+   
+         double tymin = std::min(ty1, ty2);
+         double tymax = std::max(ty1, ty2);
+   
+         if (tymin > tmin) 
+         {
+            tmin = tymin;
+            normal = { 0, ty1 > ty2 ? 1.0 : -1.0 };
+         }
+         if (tymax < tmax) tmax = tymax;
+   
+         if (tmin > tmax) continue;
+      }
 
       // intersection with ray occured, check if this object is nearer
       if (tmin < out_distance)
@@ -105,7 +132,7 @@ bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
       }
    }
    bool success = out_body != nullptr;
-   if (success)
+   if (success && output != nullptr)
    {
       output->body = out_body;
       output->contact_point = input.origin + out_distance * input.direction;
@@ -140,7 +167,7 @@ void PhysicsEngine::Update(float delta)
             ContactData contact = CreateContactData(rigidBodyA, rigidBodyB);
 
             // check if two AABBs collided and whether they pass each other's filters 
-            if (contact.penetration > 0 && ShouldCollide(rigidBodyA, rigidBodyB))
+            if (contact.penetration > 0 && rigidBodyA->ShouldCollide(rigidBodyB))
             {
                // check if these two bodies already contacted
                if (std::find(begin(contacts), end(contacts), contact) == end(contacts))
@@ -158,11 +185,24 @@ void PhysicsEngine::Update(float delta)
       {
          for (auto contact : contacts)
          {
+            CollisionInfo info;
             if (contact.first->onCollision != nullptr)
-               contact.first->onCollision(contact.first, contact.second);
+            {
+               info.self = contact.first;
+               info.other = contact.second;
+               info.normal = contact.normal;
+               info.moveDirection = (contact.first->velocity - contact.second->velocity).Normalized();
+               contact.first->onCollision(info);
+            }
             if (contact.second->onCollision != nullptr)
-               contact.second->onCollision(contact.second, contact.first);
-            
+            {
+               info.self = contact.second;
+               info.other = contact.first;
+               info.normal = -contact.normal;
+               info.moveDirection = (contact.second->velocity - contact.first->velocity).Normalized();
+               contact.second->onCollision(info);
+            }
+
             ResolveContact(contact);
          }
       }
@@ -189,23 +229,6 @@ void PhysicsEngine::Update(float delta)
 
       body->ClearForces();
    }
-}
-
-bool PhysicsEngine::ShouldCollide(RigidBody* first, RigidBody* second)
-{
-   // if (first == second) return false;
-
-   const cFilter& filterA = first->filterData();
-   const cFilter& filterB = second->filterData();
-
-   if (filterA.groupIndex == filterB.groupIndex && filterA.groupIndex != 0)
-   {
-      return filterA.groupIndex > 0;
-   }
-
-   bool collide = (filterA.maskBits & filterB.categoryBits) != 0 
-               && (filterB.maskBits & filterA.categoryBits) != 0;
-   return collide;
 }
 
 ContactData PhysicsEngine::CreateContactData(RigidBody* first, RigidBody* second)
@@ -274,8 +297,7 @@ void PhysicsEngine::ResolveContact(const ContactData& contact)
    double sf = MixFriction(first->friction, second->friction);
 
    // j tangent magnitude
-   double jt = -Dot(rv, t);
-   jt /= inv_mass_sum;
+   double jt = -Dot(rv, t) / inv_mass_sum;
 
    Vector2 tangentImpulse;
    if (std::abs(jt) < -j * sf) tangentImpulse = t * jt;
@@ -295,8 +317,8 @@ void PhysicsEngine::CorrectPosition(const ContactData& contact)
    RigidBody* first = contact.first;
    RigidBody* second = contact.second;
 
-   double percent = 0.7; // usually 20% to 80%
-   double slop = 0.0; // TODO (werat): do we need this slop?
+   double percent = 0.6; // usually 20% to 80%
+   double slop = 0.03; // TODO (werat): do we need this slop?
    Vector2 correction = contact.normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
    first->position += correction * first->inv_mass;
    second->position -= correction * second->inv_mass;

@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+#include <stdexcept>
+
 RigidBody::RigidBody()
 {
 }
@@ -29,11 +31,18 @@ void RigidBody::setType(rBodyType type)
    }
    this->ClearForces();
 }
-
 void RigidBody::setFilterData(const cFilter& filter)
 {
    this->_filterData = filter;
 }
+void RigidBody::setMass(double mass)
+{
+   if (this->_type != r_dynamicBody) return;
+
+   if (mass <= 0) throw std::invalid_argument("Mass of the dynamic body must be positive.");
+   else           this->inv_mass = 1.0 / mass;
+}
+
 
 void RigidBody::ApplyImpulse(const Vector2& impulse)
 {
@@ -46,6 +55,21 @@ void RigidBody::ApplyForce(const Vector2& force)
    if (this->_type != r_dynamicBody) return;
 
    this->_force += force;
+}
+
+bool RigidBody::ShouldCollide(const RigidBody* other)
+{
+   const cFilter& filterA = this->filterData();
+   const cFilter& filterB = other->filterData();
+
+   if (filterA.groupIndex == filterB.groupIndex && filterA.groupIndex != 0)
+   {
+      return filterA.groupIndex > 0;
+   }
+
+   bool collide = (filterA.maskBits & filterB.categoryBits) != 0 
+               && (filterB.maskBits & filterA.categoryBits) != 0;
+   return collide;
 }
 
 bool RigidBody::Intersects(const RigidBody* other, Vector2* resolution)

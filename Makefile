@@ -13,7 +13,8 @@ LFLAGS = -L$(LIB) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image
 # in Release (for windows):
 # LFLAGS += -mwindows
 
-CORE_OBJS = app.o renderer.o SDL_game.o vector2.o rigid_body.o physics_engine.o world.o main.o
+CORE_OBJS = app.o SDL_game.o vector2.o renderer.o rigid_body.o physics_engine.o world.o main.o
+CORE_OBJS += game_object.o component.o physics_component.o
 
 OBJS = $(addprefix $(OBJ)/,$(CORE_OBJS))
 
