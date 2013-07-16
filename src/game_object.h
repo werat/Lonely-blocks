@@ -45,7 +45,7 @@ private:
 
    RigidBody* _rigidBody = nullptr;
 
-   DISALLOW_COPY_AND_ASSIGN(Component);
+   DISALLOW_COPY_AND_ASSIGN(GameObject);
 };
 
 template<>

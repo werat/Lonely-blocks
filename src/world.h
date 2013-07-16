@@ -1,6 +1,5 @@
 // @werat
 
-
 #include <SDL.h>
 
 #include <vector>

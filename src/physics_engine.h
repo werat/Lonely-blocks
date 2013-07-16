@@ -80,7 +80,7 @@ private:
 
    std::vector<RigidBody*> _rigidBodies;
 
-   DISALLOW_COPY_AND_ASSIGN(Component);
+   DISALLOW_COPY_AND_ASSIGN(PhysicsEngine);
 };
 
 inline double PhysicsEngine::MixFriction(double f1, double f2)
