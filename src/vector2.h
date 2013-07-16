@@ -6,17 +6,8 @@
 #include <cmath>
 #include <iostream>
 
-
 class Vector2
 {
-public:
-   static const Vector2 Zero;
-   static const Vector2 UnitX;
-   static const Vector2 UnitY;
-
-public:
-   double x, y;
-
 public:
    Vector2() { this->x = 0; this->y = 0; }
    explicit Vector2(double d) { this->x = d; this->y = d; }
@@ -52,6 +43,13 @@ public:
    Vector2& operator*=(double mul);
 
    friend std::ostream& operator<< (std::ostream& os, const Vector2& vector);
+   
+public:
+   static const Vector2 Zero;
+   static const Vector2 UnitX;
+   static const Vector2 UnitY;
+
+   double x, y;
 };
 
 inline Vector2 Vector2::operator-() const

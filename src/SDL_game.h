@@ -3,28 +3,28 @@
 #ifndef SDL_GAME_H
 #define SDL_GAME_H
 
-#include "app.h"
-#include "world.h"
-
 #include <SDL.h>
 
 #include <vector>
 
+#include "app.h"
+#include "world.h"
+
 class SDLGame : public App
 {
-private:
-   World world;
-
 public:
    SDLGame();
    virtual ~SDLGame() {}
 
 protected:
-   virtual void OnInit();
-   virtual void OnEvent(SDL_Event* event);
-   virtual void OnUpdate(float delta);
-   virtual void OnRender(float delta);
-   virtual void OnCleanup();
+   virtual void OnInit() override;
+   virtual void OnEvent(SDL_Event* event) override;
+   virtual void OnUpdate(float delta) override;
+   virtual void OnRender(float delta) override;
+   virtual void OnCleanup() override;
+   
+private:
+   World world;
 };
 
 #endif

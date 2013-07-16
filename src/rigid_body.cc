@@ -1,10 +1,10 @@
 // @werat
 
-#include "rigid_body.h"
 
 #include <cmath>
-
 #include <stdexcept>
+
+#include "rigid_body.h"
 
 RigidBody::RigidBody()
 {

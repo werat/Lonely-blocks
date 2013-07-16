@@ -1,9 +1,9 @@
 // @werat
 
-#include "SDL_game.h"
-
 #include <SDL_image.h>
 #include <SDL.h>
+
+#include "SDL_game.h"
 
 SDLGame::SDLGame()
 {

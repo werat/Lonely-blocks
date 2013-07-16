@@ -3,11 +3,11 @@
 #ifndef RIGID_BODY_H
 #define RIGID_BODY_H 
 
-#include "vector2.h"
-
 #include <cmath>
-
 #include <functional>
+
+#include "common.h"
+#include "vector2.h"
 
 // Forward declarations
 class PhysicsEngine;
@@ -51,13 +51,32 @@ enum rBodyType
 
 class RigidBody 
 {
-   friend class PhysicsEngine;
+public:
+   double width() const { return half_width * 2; }
+   double height() const { return half_height * 2; }
+
+   rBodyType type() const { return _type; }
+   void setType(rBodyType type);
+
+   const cFilter& filterData() const { return _filterData; }
+   void setFilterData(const cFilter& filter);
+
+   double mass() const { return 1.0 / inv_mass;}
+   void setMass(double mass);
+
+   void ApplyImpulse(const Vector2& impulse);
+   void ApplyForce(const Vector2& force);
+
+   bool ShouldCollide(const RigidBody* other);
+
+   bool Intersects(const RigidBody* other, Vector2* resolution = nullptr);
+   bool ContainsPoint(const Vector2& point);
 
 private:
-   cFilter _filterData;
-   rBodyType _type = r_staticBody;
+   RigidBody();
+   ~RigidBody() {}
 
-   Vector2 _force = Vector2::Zero;
+   void ClearForces();
 
 public:
    // positional properties
@@ -81,32 +100,15 @@ public:
    GameObject* gameObject;
 
 private:
-   RigidBody();
+   cFilter _filterData;
+   rBodyType _type = r_staticBody;
 
-   void ClearForces();
+   Vector2 _force = Vector2::Zero;
+
+   DISALLOW_COPY_AND_ASSIGN(RigidBody);
 
 public:
-   ~RigidBody() {}
-
-   double width() const { return half_width * 2; }
-   double height() const { return half_height * 2; }
-
-   rBodyType type() const { return _type; }
-   void setType(rBodyType type);
-
-   const cFilter& filterData() const { return _filterData; }
-   void setFilterData(const cFilter& filter);
-
-   double mass() const { return 1.0 / inv_mass;}
-   void setMass(double mass);
-
-   void ApplyImpulse(const Vector2& impulse);
-   void ApplyForce(const Vector2& force);
-
-   bool ShouldCollide(const RigidBody* other);
-
-   bool Intersects(const RigidBody* other, Vector2* resolution = nullptr);
-   bool ContainsPoint(const Vector2& point);
+   friend class PhysicsEngine;
 };
 
 #endif

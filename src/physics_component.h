@@ -5,25 +5,21 @@
 
 #include "component.h"
 #include "rigid_body.h"
-#include "physics_engine.h"
 
 class PhysicsComponent : public Component
 {
-private:
-   PhysicsEngine* _engine;
+public:
+   PhysicsComponent();
+   virtual ~PhysicsComponent();
+
+   virtual void Init() override;
+
+   virtual void PrePhysicsUpdate(float delta) override;
+   virtual void Update(float delta) override;
 
 public:
    RigidBody* rigidBody;
    bool onGround;
-
-public:
-   PhysicsComponent(PhysicsEngine* engine);
-   virtual ~PhysicsComponent();
-
-   virtual void Init();
-
-   virtual void PrePhysicsUpdate(float delta);
-   virtual void Update(float delta);
 };
 
 #endif

@@ -2,20 +2,22 @@
 
 #include "physics_component.h"
 
-PhysicsComponent::PhysicsComponent(PhysicsEngine* engine)
+PhysicsComponent::PhysicsComponent()
 {
-   _engine = engine;
-   rigidBody = _engine->CreateBody();
+   // _engine = engine;
+   rigidBody = Physics().CreateBody();
 }
 
 PhysicsComponent::~PhysicsComponent()
 {
-   _engine->DestroyBody(rigidBody);
+   Physics().DestroyBody(rigidBody);
 }
 
 void PhysicsComponent::Init()
 {
    rigidBody->gameObject = gameObject;
+
+   // TODO (werat): move to PlatformController or smth
    rigidBody->onCollision = [&](const CollisionInfo& info)
    {
       // TODO (werat): improve for non-aabb collisions and jumpers

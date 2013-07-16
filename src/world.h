@@ -1,16 +1,37 @@
 // @werat
 
-#include "game_object.h"
-#include "rigid_body.h"
-#include "physics_engine.h"
-#include "physics_component.h"
 
 #include <SDL.h>
 
 #include <vector>
 
+#include "common.h"
+#include "game_object.h"
+#include "rigid_body.h"
+#include "physics_engine.h"
+#include "physics_component.h"
+
 class World
 {
+public:
+   World(int width, int height) { this->width = width; this->height = height; }
+   World() : World(0, 0) {}
+   ~World();
+
+public:
+   void Init();
+   void Update(float delta);
+   void Render(float delta, SDL_Renderer *renderer);
+
+private:
+   void HandleInput();
+   void UpdatePlayer(float delta);
+
+   SDL_Rect Bounds(RigidBody* body);
+   
+public:
+   int width, height;
+   
 private:
    PhysicsEngine physicsEngine;
    
@@ -28,22 +49,5 @@ private:
    
    Vector2 input;
 
-public:
-   int width, height;
-      
-public:
-   World(int width, int height) { this->width = width; this->height = height; }
-   World() : World(0, 0) {}
-   ~World();
-
-public:
-   void Init();
-   void Update(float delta);
-   void Render(float delta, SDL_Renderer *renderer);
-
-private:
-   void HandleInput();
-   void UpdatePlayer(float delta);
-
-   SDL_Rect Bounds(RigidBody* body);
+   DISALLOW_COPY_AND_ASSIGN(World);
 };

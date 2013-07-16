@@ -1,14 +1,14 @@
 // @werat
 
-#include "game_object.h"
-#include "physics_component.h"
-
 #include <map>
 #include <typeinfo>
 #include <typeindex>
 #include <string>
 #include <stdexcept>
 #include <iterator>
+
+#include "game_object.h"
+#include "physics_component.h"
 
 GameObject::GameObject(std::string name)
 {
@@ -22,12 +22,15 @@ GameObject::~GameObject()
    }
 }
 
-void GameObject::AddComponent(Component* component)
+template<>
+PhysicsComponent* GameObject::AddComponent<PhysicsComponent>()
 {
-   if (_components.find(typeid(*component)) != end(_components)) {
-      std::string type_name = typeid(*component).name();
-      throw std::invalid_argument("Component of type " + type_name + " already attached.");
+   if (_components.find(typeid(PhysicsComponent)) != end(_components)) {
+      throw std::invalid_argument("Physics Component is already attached.");
    }
+
+   auto component = new PhysicsComponent();
+   _rigidBody = component->rigidBody;
 
    _components[typeid(*component)] = component;
    component->gameObject = this;
@@ -36,18 +39,23 @@ void GameObject::AddComponent(Component* component)
    {
       component->Init();
    }
+
+   return component;
 }
 
 RigidBody* GameObject::rigidBody()
 {
-   auto physics = GetComponent<PhysicsComponent>();
-   if (physics == nullptr) return nullptr;
-   return physics->rigidBody;
+   if (_rigidBody == nullptr) {
+      throw std::logic_error("Physics Component is not attached to the game object.");
+   }
+   return _rigidBody;
 }
 
 void GameObject::Init()
 {
-   if (_initialized) return;
+   if (_initialized) {
+      throw std::logic_error("The game object has already been initialized.");
+   }
 
    for (auto pair : _components)
    {

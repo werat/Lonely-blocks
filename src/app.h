@@ -7,18 +7,10 @@
 
 #include <string>
 
+#include "common.h"
+
 class App 
 {
-private:
-   bool isRunning = false;
-
-protected:
-   SDL_Window* window = nullptr;
-   SDL_Renderer* renderer = nullptr;
-   int width, height;
-
-   int MaxFPS;
-
 public:
    App();
    virtual ~App() {}
@@ -44,6 +36,18 @@ protected:
    /// Some usefull functions
 
    void TakeScreenshot(std::string path = "");
+
+protected:
+   SDL_Window* window = nullptr;
+   SDL_Renderer* renderer = nullptr;
+   int width, height;
+
+   int MaxFPS;
+
+private:
+   bool isRunning = false;
+
+   DISALLOW_COPY_AND_ASSIGN(App);
 };
 
 #endif   

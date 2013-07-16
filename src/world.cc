@@ -1,9 +1,9 @@
 // @werat
 
+#include <SDL.h>
+
 #include "world.h"
 #include "component.h"
-
-#include <SDL.h>
 
 World::~World()
 {
@@ -15,6 +15,8 @@ World::~World()
 
 void World::Init()
 {
+   Component::Initialize(&physicsEngine);
+
    const int n = 20;
    const int m = 16;
    int tiles_map[n][m] = 
@@ -96,15 +98,14 @@ void World::Init()
    }
 
    g_player = new GameObject("player");
-   g_player->AddComponent(new PhysicsComponent(&physicsEngine));
+   g_player->AddComponent<PhysicsComponent>();
    g_player->Init();
-   auto pc = g_player->GetComponent<PhysicsComponent>();
-   pc->rigidBody->setType(r_dynamicBody);
-   pc->rigidBody->position = { 120, 500 };
-   pc->rigidBody->half_width = 30 / 2;
-   pc->rigidBody->half_height = 50 / 2;
-   pc->rigidBody->setMass(5);
-   pc->rigidBody->friction = 0.5;
+   g_player->rigidBody()->setType(r_dynamicBody);
+   g_player->rigidBody()->position = { 120, 500 };
+   g_player->rigidBody()->half_width = 30 / 2;
+   g_player->rigidBody()->half_height = 50 / 2;
+   g_player->rigidBody()->setMass(5);
+   g_player->rigidBody()->friction = 0.5;
 
    RigidBody* floor = physicsEngine.CreateBody();
    floor->position = { 400, 600 - 15};
@@ -153,7 +154,7 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_RenderDrawRect(renderer, &bounds);
    } 
 
-   SDL_Rect bounds = Bounds(g_player->GetComponent<PhysicsComponent>()->rigidBody);
+   SDL_Rect bounds = Bounds(g_player->rigidBody());
    if (g_player->GetComponent<PhysicsComponent>()->onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
    else                  SDL_SetRenderDrawColor(renderer, 255, 128, 128, 255); // not red
    SDL_RenderFillRect(renderer, &bounds);

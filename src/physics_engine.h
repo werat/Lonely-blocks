@@ -3,10 +3,11 @@
 #ifndef PHYSICS_ENGINE_H
 #define PHYSICS_ENGINE_H
 
-#include "rigid_body.h"
-
 #include <cmath>
 #include <vector>
+
+#include "common.h"
+#include "rigid_body.h"
 
 struct ContactData
 {
@@ -49,16 +50,6 @@ struct RaycastOut
 
 class PhysicsEngine
 {
-private:
-   // _steps - number of steps we take during one usual Update(delta)
-   // dt would be (delta / _steps) if delta is fixed
-   int _steps = 5;
-
-   std::vector<RigidBody*> _rigidBodies;
-
-public:
-   Vector2 gravity;
-   
 public:
    PhysicsEngine();
    ~PhysicsEngine();
@@ -78,6 +69,18 @@ private:
 
    double MixFriction(double f1, double f2);
    double MixRestitution(double r1, double r2);
+   
+public:
+   Vector2 gravity;
+   
+private:
+   // _steps - number of steps we take during one usual Update(delta)
+   // dt would be (delta / _steps) if delta is fixed
+   int _steps = 5;
+
+   std::vector<RigidBody*> _rigidBodies;
+
+   DISALLOW_COPY_AND_ASSIGN(Component);
 };
 
 inline double PhysicsEngine::MixFriction(double f1, double f2)
