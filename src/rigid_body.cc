@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <limits>
 
 #include "rigid_body.h"
 
@@ -95,4 +96,73 @@ bool RigidBody::ContainsPoint(const Vector2& point)
                  && (point.y <= this->position.y + this->half_height);
 
    return containsX && containsY;
+}
+bool RigidBody::Raycast(const _Internal_RaycastIn& input, _Internal_RaycastOut* output)
+{
+   Vector2 inv_d = { 1.0 / input.direction.x, 1.0 / input.direction.y };
+
+   // Real-Time Collision Detection, p179
+
+   double tmin = 0.0;
+   double tmax = input.max_distance;
+   Vector2 normal;
+
+   // check for X-axis
+   if (input.direction.x == 0.0) // TODO (werat): |x| < EPSILON
+   {
+      // slight modification from the original alrotithm: non-strict comparison instead of strict
+      if (position.x - half_width >= input.origin.x
+       || position.x + half_width <= input.origin.x)
+         return false;
+   }
+   else
+   {
+      double tx1 = (position.x - half_width - input.origin.x) * inv_d.x;
+      double tx2 = (position.x + half_width - input.origin.x) * inv_d.x;
+
+      double txmin = std::min(tx1, tx2);
+      double txmax = std::max(tx1, tx2);
+
+      if (txmin > tmin) 
+      {
+         tmin = txmin;
+         normal = { tx1 > tx2 ? 1.0 : -1.0, 0 };
+      }
+      if (txmax < tmax) tmax = txmax;
+
+      if (tmin > tmax) return false;
+   }
+
+   // check for Y-axis
+   if (input.direction.y == 0.0) // TODO (werat): |y| < EPSILON
+   {
+      if (position.y - half_height >= input.origin.y
+       || position.y + half_height <= input.origin.y)
+         return false;
+   }
+   else
+   {
+      double ty1 = (position.y - half_height - input.origin.y) * inv_d.y;
+      double ty2 = (position.y + half_height - input.origin.y) * inv_d.y;
+
+      double tymin = std::min(ty1, ty2);
+      double tymax = std::max(ty1, ty2);
+
+      if (tymin > tmin) 
+      {
+         tmin = tymin;
+         normal = { 0, ty1 > ty2 ? 1.0 : -1.0 };
+      }
+      if (tymax < tmax) tmax = tymax;
+
+      if (tmin > tmax) return false;
+   }
+
+   // intersection with ray occured
+   if (output != nullptr)
+   {
+      output->distance = tmin;
+      output->normal = normal;
+   }
+   return true;
 }

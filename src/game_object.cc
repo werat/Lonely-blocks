@@ -30,7 +30,7 @@ PhysicsComponent* GameObject::AddComponent<PhysicsComponent>()
    }
 
    auto component = new PhysicsComponent();
-   _rigidBody = component->rigidBody;
+   _rigidBody = &component->rigidBody();
 
    _components[typeid(*component)] = component;
    component->gameObject = this;
@@ -43,12 +43,12 @@ PhysicsComponent* GameObject::AddComponent<PhysicsComponent>()
    return component;
 }
 
-RigidBody* GameObject::rigidBody()
+RigidBody& GameObject::rigidBody()
 {
    if (_rigidBody == nullptr) {
       throw std::logic_error("Physics Component is not attached to the game object.");
    }
-   return _rigidBody;
+   return *_rigidBody;
 }
 
 void GameObject::Init()
@@ -76,4 +76,11 @@ void GameObject::Update(float delta)
    {
       pair.second->Update(delta);
    }
+}
+void GameObject::Render(float delta, SDL_Renderer *renderer)
+{
+   for (auto pair : _components)
+   {
+      pair.second->Render(delta, renderer);
+   }  
 }

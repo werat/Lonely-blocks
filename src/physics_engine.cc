@@ -1,15 +1,15 @@
 // @werat
 
-#include "physics_engine.h"
-
 #include <cmath>
-
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <limits>
 #include <iterator>
 #include <stdexcept>
+
+#include "physics_engine.h"
+#include "collision.h"
 
 PhysicsEngine::PhysicsEngine()
 {
@@ -43,101 +43,48 @@ void PhysicsEngine::DestroyBody(RigidBody* rigidBody)
 
 bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
 {
-   double Max_Distance = input.max_distance > 0 
-                           ? input.max_distance 
-                           : std::numeric_limits<double>::max();
-
    RigidBody* out_body = nullptr;
    double out_distance = std::numeric_limits<double>::max();
-   Vector2 out_normal;
+   Vector2 out_normal, out_contact_point;
 
-   Vector2 inv_d = { 1.0 / input.direction.x, 1.0 / input.direction.y };
+   _Internal_RaycastOut int_output;
+   _Internal_RaycastIn int_input;
+   int_input.origin = input.origin;
+   int_input.direction = input.direction;
+   int_input.max_distance = input.max_distance > 0 ? input.max_distance
+                                                   : std::numeric_limits<double>::max();
 
    for (auto b : _rigidBodies)
    {
       if ((b->filterData().categoryBits & input.categoryMask) == 0)
       {
-         // Ingore body, as it's
+         // ingore body if it belongs to ignored category
          continue;
       }
       if (b->ContainsPoint(input.origin))
       {
-         // Ignore body if origin inside it
+         // ignore body if origin is inside it
          continue;
       }
 
-      // Real-Time Collision Detection, p179
-
-      double tmin = 0.0;
-      double tmax = Max_Distance;
-      Vector2 normal;
-
-      // check for X-axis
-      if (input.direction.x == 0.0) // TODO (werat): |x| < EPSILON
+      if (b->Raycast(int_input, &int_output))
       {
-         // slight modification from the original alrotithm: non-strict comparison instead of strict
-         if (b->position.x - b->half_width >= input.origin.x
-          || b->position.x + b->half_width <= input.origin.x)
-            continue;
-      }
-      else
-      {
-         double tx1 = (b->position.x - b->half_width - input.origin.x) * inv_d.x;
-         double tx2 = (b->position.x + b->half_width - input.origin.x) * inv_d.x;
-
-         double txmin = std::min(tx1, tx2);
-         double txmax = std::max(tx1, tx2);
-
-         if (txmin > tmin) 
+         // intersection with ray occured, check if this object is nearer
+         if (int_output.distance < out_distance)
          {
-            tmin = txmin;
-            normal = { tx1 > tx2 ? 1.0 : -1.0, 0 };
+            out_body = b;
+            out_distance = int_output.distance;
+            out_normal = int_output.normal;
          }
-         if (txmax < tmax) tmax = txmax;
-
-         if (tmin > tmax) continue;
-      }
-
-      // check for Y-axis
-      if (input.direction.y == 0.0) // TODO (werat): |y| < EPSILON
-      {
-         if (b->position.y - b->half_height >= input.origin.y
-          || b->position.y + b->half_height <= input.origin.y)
-            continue;
-      }
-      else
-      {
-         double ty1 = (b->position.y - b->half_height - input.origin.y) * inv_d.y;
-         double ty2 = (b->position.y + b->half_height - input.origin.y) * inv_d.y;
-   
-         double tymin = std::min(ty1, ty2);
-         double tymax = std::max(ty1, ty2);
-   
-         if (tymin > tmin) 
-         {
-            tmin = tymin;
-            normal = { 0, ty1 > ty2 ? 1.0 : -1.0 };
-         }
-         if (tymax < tmax) tmax = tymax;
-   
-         if (tmin > tmax) continue;
-      }
-
-      // intersection with ray occured, check if this object is nearer
-      if (tmin < out_distance)
-      {
-         out_body = b;
-         out_distance = tmin;
-         out_normal = normal;
       }
    }
    bool success = out_body != nullptr;
    if (success && output != nullptr)
    {
       output->body = out_body;
-      output->contact_point = input.origin + out_distance * input.direction;
-      output->normal = out_normal;
       output->distance = out_distance;
+      output->normal = out_normal;
+      output->contact_point = input.origin + out_distance * input.direction;
    }
    return success;
 }
@@ -145,13 +92,16 @@ bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
 
 void PhysicsEngine::Update(float delta)
 {
-   const double dt = delta / _steps; // delta is fixed, so everything works fine
-   
+   const double dt = _minimal_dt;
+   _accumulator += delta;
+
    std::vector<ContactData> contacts;
 
    // TODO (werat): eliminate all this "if (body->type() == r_staticBody) continue;"
-   for (int i = 0; i < _steps; ++i)
+   while (_accumulator > _minimal_dt)
    {
+      _accumulator -= _minimal_dt;
+
       // This is BROADPHASE.
       // Here we iterate over objects constructing pairs of potential contacts
       // *** at the moment there are only AABBs, so we don't need narrowphase ***
@@ -248,11 +198,11 @@ ContactData PhysicsEngine::CreateContactData(RigidBody* first, RigidBody* second
       // TODO (werat): optimize to cool inline functions instead of copysign
       if (x_overlap < y_overlap)
       {
-         contact.normal = Vector2(-std::copysign(1.0, n.x), 0);
+         contact.normal = { -std::copysign(1.0, n.x), 0 };
       }
       else
       {
-         contact.normal = Vector2(0, -std::copysign(1.0, n.y));
+         contact.normal = { 0, -std::copysign(1.0, n.y) };
       }
 
       contact.penetration = std::min(x_overlap, y_overlap);
@@ -318,8 +268,13 @@ void PhysicsEngine::CorrectPosition(const ContactData& contact)
    RigidBody* second = contact.second;
 
    double percent = 0.6; // usually 20% to 80%
-   double slop = 0.03; // TODO (werat): do we need this slop?
-   Vector2 correction = contact.normal * (std::max(contact.penetration - slop, 0.0) / (first->inv_mass + second->inv_mass) * percent);
-   first->position += correction * first->inv_mass;
-   second->position -= correction * second->inv_mass;
+   double slop = 0.0; // TODO (werat): do we need this slop?
+
+   double pen  = contact.penetration - slop;
+   if (pen > 0)
+   {
+      Vector2 correction = contact.normal * (pen / (first->inv_mass + second->inv_mass) * percent);
+      first->position += correction * first->inv_mass;
+      second->position -= correction * second->inv_mass;
+   }
 }

@@ -15,7 +15,7 @@ for file in multiple_file_types("*.cc", "*.h"):
     if match:
         print file, "is already marked by", match.group(1)
     else:
-        print "***", file, "has been marked by", name
+        print "***", file, "has been marked by", name, "***"
         with open(file, "w") as f:
             lines.insert(0, "\n")
             lines.insert(0, "\n")

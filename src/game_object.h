@@ -29,12 +29,13 @@ public:
    C* GetComponent();
 
    // helper functions
-   RigidBody* rigidBody();
+   RigidBody& rigidBody();
 
    // Initialize all attached components
    void Init();
    void PrePhysicsUpdate(float delta);
    void Update(float delta);
+   void Render(float delta, SDL_Renderer *renderer);
 
 public:
    std::string name;
@@ -71,27 +72,6 @@ C* GameObject::AddComponent()
 
    return component;
 }
-
-// template<>
-// inline PhysicsComponent* GameObject::AddComponent<PhysicsComponent>()
-// {
-//    if (_components.find(typeid(PhysicsComponent)) != end(_components)) {
-//       throw std::invalid_argument("Physics Component is already attached.");
-//    }
-
-//    auto component = new PhysicsComponent();
-//    _rigidBody = component->rigidBody;
-
-//    _components[typeid(*component)] = component;
-//    component->gameObject = this;
-
-//    if (_initialized)
-//    {
-//       component->Init();
-//    }
-
-//    return component;
-// }
 
 template<typename C>
 C* GameObject::GetComponent()

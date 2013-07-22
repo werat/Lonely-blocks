@@ -12,14 +12,18 @@ public:
    PhysicsComponent();
    virtual ~PhysicsComponent();
 
+   RigidBody& rigidBody() { return *_rigidBody; }
+
    virtual void Init() override;
 
    virtual void PrePhysicsUpdate(float delta) override;
    virtual void Update(float delta) override;
 
 public:
-   RigidBody* rigidBody;
    bool onGround;
+
+private:
+   RigidBody* _rigidBody;
 };
 
 #endif

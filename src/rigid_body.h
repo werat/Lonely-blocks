@@ -8,11 +8,12 @@
 
 #include "common.h"
 #include "vector2.h"
+#include "collision.h"
 
 // Forward declarations
 class PhysicsEngine;
-struct CollisionInfo;
 class GameObject;
+class PhysicsComponent;
 
 struct cFilter
 {
@@ -64,6 +65,8 @@ public:
    double mass() const { return 1.0 / inv_mass;}
    void setMass(double mass);
 
+   GameObject& gameObject() { return *_gameObject; }
+
    void ApplyImpulse(const Vector2& impulse);
    void ApplyForce(const Vector2& force);
 
@@ -77,6 +80,8 @@ private:
    ~RigidBody() {}
 
    void ClearForces();
+   
+   bool Raycast(const _Internal_RaycastIn& input, _Internal_RaycastOut* output = nullptr);
 
 public:
    // positional properties
@@ -92,23 +97,26 @@ public:
    // linear properties
    Vector2 velocity = Vector2::Zero;
 
+   // how much gravity affects the body
    double gravity_scale = 1.0;
 
    std::function<void(const CollisionInfo&)> onCollision;
-
-   // can't be null, as rigidbody is always attached to GameObject via PhysicsComponent
-   GameObject* gameObject;
 
 private:
    cFilter _filterData;
    rBodyType _type = r_staticBody;
 
+   // can't be null, as rigidbody is always attached to GameObject via PhysicsComponent
+   GameObject* _gameObject;
+
    Vector2 _force = Vector2::Zero;
+   
 
    DISALLOW_COPY_AND_ASSIGN(RigidBody);
 
 public:
    friend class PhysicsEngine;
+   friend class PhysicsComponent;
 };
 
 #endif

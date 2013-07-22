@@ -100,12 +100,12 @@ void World::Init()
    g_player = new GameObject("player");
    g_player->AddComponent<PhysicsComponent>();
    g_player->Init();
-   g_player->rigidBody()->setType(r_dynamicBody);
-   g_player->rigidBody()->position = { 120, 500 };
-   g_player->rigidBody()->half_width = 30 / 2;
-   g_player->rigidBody()->half_height = 50 / 2;
-   g_player->rigidBody()->setMass(5);
-   g_player->rigidBody()->friction = 0.5;
+   g_player->rigidBody().setType(r_dynamicBody);
+   g_player->rigidBody().position = { 120, 500 };
+   g_player->rigidBody().half_width = 30 / 2;
+   g_player->rigidBody().half_height = 50 / 2;
+   g_player->rigidBody().setMass(5);
+   g_player->rigidBody().friction = 0.5;
 
    RigidBody* floor = physicsEngine.CreateBody();
    floor->position = { 400, 600 - 15};
@@ -135,6 +135,8 @@ void World::Update(float delta)
 {
    HandleInput();
 
+   if (slow_mo) delta /= 5;
+
    g_player->PrePhysicsUpdate(delta);
 
    physicsEngine.Update(delta);
@@ -147,13 +149,12 @@ void World::Render(float delta, SDL_Renderer *renderer)
 {
    for (auto tile : tiles)
    {
-      SDL_Rect bounds = Bounds(tile);
+      SDL_Rect bounds = Bounds(*tile);
       SDL_SetRenderDrawColor(renderer, 100, 75, 10, 255); // brown color for tiles
       SDL_RenderFillRect(renderer, &bounds);
       SDL_SetRenderDrawColor(renderer, 0, 255, 230, 255); // for border
       SDL_RenderDrawRect(renderer, &bounds);
    } 
-
    SDL_Rect bounds = Bounds(g_player->rigidBody());
    if (g_player->GetComponent<PhysicsComponent>()->onGround) SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255); // not red
    else                  SDL_SetRenderDrawColor(renderer, 255, 128, 128, 255); // not red
@@ -175,6 +176,13 @@ void World::Render(float delta, SDL_Renderer *renderer)
          SDL_RenderDrawLine(renderer, to.x, to.y, to_normal.x, to_normal.y);
       }
    }
+
+   if (slow_mo)
+   {
+      SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0); // for border
+      SDL_Rect slow_rect = { 20, 20, 20, 20};
+      SDL_RenderFillRect(renderer, &slow_rect);
+   }
 }
 
 void World::HandleInput()
@@ -186,6 +194,8 @@ void World::HandleInput()
    if (state[SDL_SCANCODE_RIGHT]) input.x = 1;
    if (state[SDL_SCANCODE_UP]) input.y = -1;
    if (state[SDL_SCANCODE_DOWN]) input.y = 1;
+
+   slow_mo = state[SDL_SCANCODE_S];
 }
 
 void World::UpdatePlayer(float delta)
@@ -193,10 +203,10 @@ void World::UpdatePlayer(float delta)
    PhysicsComponent* physics = g_player->GetComponent<PhysicsComponent>();
    
    if (input.y < 0 && physics->onGround) {
-      physics->rigidBody->ApplyImpulse({0, -2300});
+      physics->rigidBody().ApplyImpulse({0, -2300});
    }
    if (input.x != 0 ) {
-      physics->rigidBody->ApplyForce({5000 * input.x, 0});
+      physics->rigidBody().ApplyForce({5000 * input.x, 0});
    }
 
    auto state = SDL_GetKeyboardState(NULL);
@@ -217,7 +227,7 @@ void World::UpdatePlayer(float delta)
       points.clear();
       normals.clear();
 
-      Vector2 from = physics->rigidBody->position;
+      Vector2 from = physics->rigidBody().position;
       Vector2 to = { (double)mx, (double)my };
 
       points.push_back(from);
@@ -253,13 +263,13 @@ void World::UpdatePlayer(float delta)
    }
 }
 
-SDL_Rect World::Bounds(RigidBody* body)
+SDL_Rect World::Bounds(const RigidBody& body)
 {
    return SDL_Rect
    {
-      (int)std::round(body->position.x - body->half_width),
-      (int)std::round(body->position.y - body->half_height),
-      (int)std::round(body->width()),
-      (int)std::round(body->height())
+      (int)std::round(body.position.x - body.half_width),
+      (int)std::round(body.position.y - body.half_height),
+      (int)std::round(body.width()),
+      (int)std::round(body.height())
    };
 }

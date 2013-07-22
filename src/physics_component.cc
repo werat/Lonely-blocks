@@ -1,24 +1,24 @@
 // @werat
 
+#include "rigid_body.h"
 #include "physics_component.h"
 
 PhysicsComponent::PhysicsComponent()
 {
-   // _engine = engine;
-   rigidBody = Physics().CreateBody();
+   _rigidBody = Physics().CreateBody();
 }
 
 PhysicsComponent::~PhysicsComponent()
 {
-   Physics().DestroyBody(rigidBody);
+   Physics().DestroyBody(_rigidBody);
 }
 
 void PhysicsComponent::Init()
 {
-   rigidBody->gameObject = gameObject;
+   _rigidBody->_gameObject = gameObject;
 
-   // TODO (werat): move to PlatformController or smth
-   rigidBody->onCollision = [&](const CollisionInfo& info)
+   // TODO (werat): move to PlayerController or smth
+   _rigidBody->onCollision = [&](const CollisionInfo& info)
    {
       // TODO (werat): improve for non-aabb collisions and jumpers
       if (info.normal.y < 0 && info.moveDirection.y > 0)

@@ -8,44 +8,21 @@
 
 #include "common.h"
 #include "rigid_body.h"
-
-struct ContactData
-{
-   RigidBody* first;
-   RigidBody* second;
-
-   Vector2 normal;
-   double penetration;
-
-   bool operator==(const ContactData& other)
-   {
-      return (first == other.first && second == other.second)
-          || (first == other.second && second == other.first);
-   }
-};
-
-struct CollisionInfo
-{
-   RigidBody* self;
-   RigidBody* other;
-
-   Vector2 normal;
-   Vector2 moveDirection;
-};
+#include "collision.h"
 
 struct RaycastIn
 {
    Vector2 origin;
    Vector2 direction;
-   double max_distance = 0.0; // 0.0 or less the for infinite ray
+   double max_distance = 0; // 0 or less the for the infinite ray
    unsigned int categoryMask = 0xFFFFFFFF; // accept all categoties 
 };
 struct RaycastOut
 {
    RigidBody* body;
-   Vector2 contact_point;
-   Vector2 normal;
    double distance;
+   Vector2 normal;
+   Vector2 contact_point;
 };
 
 class PhysicsEngine
@@ -77,6 +54,10 @@ private:
    // _steps - number of steps we take during one usual Update(delta)
    // dt would be (delta / _steps) if delta is fixed
    int _steps = 5;
+   float _minimal_dt = 1.0 / 60 / _steps;
+
+   // accumulated time from previous updates
+   float _accumulator = 0.0;
 
    std::vector<RigidBody*> _rigidBodies;
 
