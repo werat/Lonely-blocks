@@ -10,6 +10,7 @@ World::~World()
    for (auto tile : tiles)
       physicsEngine.DestroyBody(tile);
 
+   g_player->Destroy();
    delete g_player;
 }
 
@@ -97,7 +98,7 @@ void World::Init()
       }
    }
 
-   g_player = new GameObject("player");
+   g_player = new GameObject(nullptr, "player");
    g_player->AddComponent<PhysicsComponent>();
    g_player->Init();
    g_player->rigidBody().setType(r_dynamicBody);
@@ -135,7 +136,8 @@ void World::Update(float delta)
 {
    HandleInput();
 
-   if (slow_mo) delta /= 5;
+   if (slow_mo) { delta /= 5; }
+   if (fast_mo) { delta *= 5; }
 
    g_player->PrePhysicsUpdate(delta);
 
@@ -183,6 +185,12 @@ void World::Render(float delta, SDL_Renderer *renderer)
       SDL_Rect slow_rect = { 20, 20, 20, 20};
       SDL_RenderFillRect(renderer, &slow_rect);
    }
+   if (fast_mo)
+   {
+      SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0); // for border
+      SDL_Rect slow_rect = { 20, 20, 20, 20};
+      SDL_RenderFillRect(renderer, &slow_rect);
+   }
 }
 
 void World::HandleInput()
@@ -196,6 +204,7 @@ void World::HandleInput()
    if (state[SDL_SCANCODE_DOWN]) input.y = 1;
 
    slow_mo = state[SDL_SCANCODE_S];
+   fast_mo = state[SDL_SCANCODE_F];
 }
 
 void World::UpdatePlayer(float delta)
@@ -261,15 +270,4 @@ void World::UpdatePlayer(float delta)
 
       draw_ray = true;
    }
-}
-
-SDL_Rect World::Bounds(const RigidBody& body)
-{
-   return SDL_Rect
-   {
-      (int)std::round(body.position.x - body.half_width),
-      (int)std::round(body.position.y - body.half_height),
-      (int)std::round(body.width()),
-      (int)std::round(body.height())
-   };
 }

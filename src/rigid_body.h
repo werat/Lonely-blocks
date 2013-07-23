@@ -11,9 +11,8 @@
 #include "collision.h"
 
 // Forward declarations
-class PhysicsEngine;
 class GameObject;
-class PhysicsComponent;
+class PhysicsEngine;
 
 struct cFilter
 {
@@ -106,7 +105,7 @@ private:
    cFilter _filterData;
    rBodyType _type = r_staticBody;
 
-   // can't be null, as rigidbody is always attached to GameObject via PhysicsComponent
+   // can't be null, as rigidbody is always attached to GameObject like a Component
    GameObject* _gameObject;
 
    Vector2 _force = Vector2::Zero;
@@ -115,8 +114,8 @@ private:
    DISALLOW_COPY_AND_ASSIGN(RigidBody);
 
 public:
+   friend class GameObject;
    friend class PhysicsEngine;
-   friend class PhysicsComponent;
 };
 
 #endif

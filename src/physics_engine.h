@@ -49,15 +49,10 @@ private:
    
 public:
    Vector2 gravity;
-   
+
 private:
    // _steps - number of steps we take during one usual Update(delta)
-   // dt would be (delta / _steps) if delta is fixed
    int _steps = 5;
-   float _minimal_dt = 1.0 / 60 / _steps;
-
-   // accumulated time from previous updates
-   float _accumulator = 0.0;
 
    std::vector<RigidBody*> _rigidBodies;
 

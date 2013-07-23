@@ -1,6 +1,5 @@
 // @werat
 
-#include <map>
 #include <typeinfo>
 #include <typeindex>
 #include <string>
@@ -8,14 +7,25 @@
 #include <iterator>
 
 #include "game_object.h"
-#include "physics_component.h"
+#include "scene.h"
 
-GameObject::GameObject(std::string name)
+GameObject::GameObject(Scene* scene, std::string name)
 {
+   if (scene == nullptr) {
+      throw std::invalid_argument("scene can't be nullptr.");
+   }
+
+   this->_scene = scene;
    this->name = name;
+
+   _scene->Add(this);
 }
 GameObject::~GameObject()
 {
+   if (!_destroyed)
+   {
+      Destroy();
+   }
    for (auto pair : _components)
    {
       delete pair.second;
@@ -23,32 +33,16 @@ GameObject::~GameObject()
 }
 
 template<>
-PhysicsComponent* GameObject::AddComponent<PhysicsComponent>()
+RigidBody* GameObject::AddComponent<RigidBody>()
 {
-   if (_components.find(typeid(PhysicsComponent)) != end(_components)) {
-      throw std::invalid_argument("Physics Component is already attached.");
+   if (_rigidBody != nullptr) {
+      throw std::invalid_argument("Rigidbody is already attached.");
    }
 
-   auto component = new PhysicsComponent();
-   _rigidBody = &component->rigidBody();
+   _rigidBody = _scene->physics().CreateBody();
+   _rigidBody->_gameObject = this;
 
-   _components[typeid(*component)] = component;
-   component->gameObject = this;
-
-   if (_initialized)
-   {
-      component->Init();
-   }
-
-   return component;
-}
-
-RigidBody& GameObject::rigidBody()
-{
-   if (_rigidBody == nullptr) {
-      throw std::logic_error("Physics Component is not attached to the game object.");
-   }
-   return *_rigidBody;
+   return _rigidBody;
 }
 
 void GameObject::Init()
@@ -62,6 +56,23 @@ void GameObject::Init()
       pair.second->Init();
    }
    _initialized = true;
+}
+void GameObject::Destroy()
+{
+   if (_destroyed) {
+      throw std::logic_error("The game object has already been destroyed.");
+   }
+
+   for (auto pair : _components)
+   {
+      pair.second->Destroy();
+   }
+   if (_rigidBody != nullptr)
+   {
+      _scene->physics().DestroyBody(_rigidBody);
+   }
+
+   _destroyed = true;
 }
 void GameObject::PrePhysicsUpdate(float delta)
 {

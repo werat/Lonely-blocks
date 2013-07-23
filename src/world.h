@@ -26,8 +26,6 @@ private:
    void HandleInput();
    void UpdatePlayer(float delta);
 
-   SDL_Rect Bounds(const RigidBody& body);
-   
 public:
    int width, height;
    
@@ -48,6 +46,7 @@ private:
    
    Vector2 input;
    bool slow_mo = false;
+   bool fast_mo = false;
 
    DISALLOW_COPY_AND_ASSIGN(World);
 };

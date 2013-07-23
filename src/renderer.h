@@ -5,6 +5,8 @@
 
 #include <SDL.h>
 
+#include "rigid_body.h"
+
 class Renderer
 {
 public:
@@ -22,6 +24,8 @@ public:
    static void DrawTexture(SDL_Renderer *renderer, SDL_Texture *tex, SDL_Rect &dstRect, SDL_Rect *srcRect = NULL,
                            float angle = 0.0, int xPivot = 0, int yPivot = 0,
                            SDL_RendererFlip flip = SDL_FLIP_NONE);
+
+   static SDL_Rect Bounds(const RigidBody& body);
 };
 
 #endif

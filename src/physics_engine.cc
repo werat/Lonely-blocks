@@ -89,19 +89,16 @@ bool PhysicsEngine::Raycast(const RaycastIn& input, RaycastOut* output)
    return success;
 }
 
-
 void PhysicsEngine::Update(float delta)
 {
-   const double dt = _minimal_dt;
-   _accumulator += delta;
+   // at this rate physics engine will update
+   const double dt = delta / _steps;
 
    std::vector<ContactData> contacts;
 
    // TODO (werat): eliminate all this "if (body->type() == r_staticBody) continue;"
-   while (_accumulator > _minimal_dt)
+   for (int i = 0; i < _steps; ++i)
    {
-      _accumulator -= _minimal_dt;
-
       // This is BROADPHASE.
       // Here we iterate over objects constructing pairs of potential contacts
       // *** at the moment there are only AABBs, so we don't need narrowphase ***

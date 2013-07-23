@@ -5,19 +5,20 @@
 
 #include <typeinfo>
 #include <typeindex>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <stdexcept>
 
 #include "common.h"
 #include "component.h"
 #include "rigid_body.h"
-#include "physics_component.h"
+
+class Scene;
 
 class GameObject
 {
 public:
-   GameObject(std::string name = "game_object");
+   GameObject(Scene* scene, std::string name = "game_object");
    ~GameObject();
 
    // Adding component of type that is already attached will result in std::invalid_argument exception
@@ -29,10 +30,13 @@ public:
    C* GetComponent();
 
    // helper functions
-   RigidBody& rigidBody();
+   RigidBody& rigidBody() { return *_rigidBody; }
+   Scene& scene() { return *_scene; }
 
    // Initialize all attached components
    void Init();
+   void Destroy();
+
    void PrePhysicsUpdate(float delta);
    void Update(float delta);
    void Render(float delta, SDL_Renderer *renderer);
@@ -42,15 +46,18 @@ public:
 
 private:
    bool _initialized = false;
-   std::map<std::type_index, Component*> _components;
+   bool _destroyed = false;
 
+   std::unordered_map<std::type_index, Component*> _components;
    RigidBody* _rigidBody = nullptr;
+
+   Scene* _scene;
 
    DISALLOW_COPY_AND_ASSIGN(GameObject);
 };
 
 template<>
-PhysicsComponent* GameObject::AddComponent<PhysicsComponent>();
+RigidBody* GameObject::AddComponent<RigidBody>();
 
 template<typename C>
 C* GameObject::AddComponent()
@@ -63,7 +70,7 @@ C* GameObject::AddComponent()
    auto component = new C();
 
    _components[typeid(*component)] = component;
-   component->gameObject = this;
+   component->_gameObject = this;
 
    if (_initialized)
    {

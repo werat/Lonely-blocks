@@ -16,25 +16,23 @@ public:
    Component() {}
    virtual ~Component() {}
 
-   // TODO (werat): make GameObject have reference to Scene
-   // and from Scene we can access any other objects such as Physics Engine
-   static void Initialize(PhysicsEngine* engine);
+   GameObject& gameObject() { return *_gameObject; }
+   PhysicsEngine& physics();
 
    virtual void Init() {}
+   virtual void Destroy() {}
+
    virtual void PrePhysicsUpdate(float delta) {}
    virtual void Update(float delta) {}
    virtual void Render(float delta, SDL_Renderer *renderer) {}
    
-public:
-   GameObject* gameObject;
-
-   static PhysicsEngine& Physics();
-
 private:
-   static PhysicsEngine* _physicsEngine;
-   static bool _global_initialized;
-
+   GameObject* _gameObject;
+   
    DISALLOW_COPY_AND_ASSIGN(Component);
+
+public:
+   friend class GameObject;
 };
 
 #endif

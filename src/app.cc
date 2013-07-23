@@ -10,10 +10,10 @@
 #include "renderer.h"
 
 #define FORMAT  SDL_PIXELFORMAT_ARGB8888
-#define AMASK   0xff000000 /**< Alpha bit mask. */
-#define RMASK   0x00ff0000 /**< Red bit mask. */
-#define GMASK   0x0000ff00 /**< Green bit mask. */
-#define BMASK   0x000000ff /**< Blue bit mask. */
+#define AMASK   0xff000000 // < Alpha bit mask.
+#define RMASK   0x00ff0000 // < Red bit mask.
+#define GMASK   0x0000ff00 // < Green bit mask.
+#define BMASK   0x000000ff // < Blue bit mask.
 
 void App::OnInit()
 {
@@ -64,9 +64,9 @@ void App::Run()
 
    SDL_Event Event;
 
-   int targetElapsedTime = 1000.0 / MaxFPS;
-   int elapsedTimer = SDL_GetTicks();
-   int accumulatedElapsedTimer = 0;
+   float targetElapsedTime = 1000.0 / MaxFPS;
+   float elapsedTimer = SDL_GetTicks();
+   float accumulatedElapsedTimer = 0;
 
    isRunning = true;
    while (isRunning)

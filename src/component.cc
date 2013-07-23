@@ -2,28 +2,12 @@
 
 #include <stdexcept>
 
+#include "game_object.h"
+#include "scene.h"
 #include "component.h"
 #include "physics_engine.h"
 
-bool Component::_global_initialized = false;
-PhysicsEngine* Component::_physicsEngine = nullptr;
-
-void Component::Initialize(PhysicsEngine* engine)
+inline PhysicsEngine& Component::physics()
 {
-   if (_global_initialized) {
-      throw std::logic_error("Global initialization of Component has already been done.");
-   }
-
-   _physicsEngine = engine;
-
-   _global_initialized = true;
+   return _gameObject->scene().physics();
 }
-
-PhysicsEngine& Component::Physics()
-{
-   if (!_global_initialized) {
-      throw std::logic_error("Component is not globally initialized.");
-   }
-   return *_physicsEngine;
-}
-
