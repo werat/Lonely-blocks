@@ -5,6 +5,7 @@
 
 #include <typeinfo>
 #include <typeindex>
+#include <vector>
 #include <unordered_map>
 #include <string>
 #include <stdexcept>
@@ -18,6 +19,7 @@ class Scene;
 class GameObject
 {
 public:
+   GameObject(GameObject* parent, std::string name = "game_object");
    GameObject(Scene* scene, std::string name = "game_object");
    ~GameObject();
 
@@ -28,6 +30,9 @@ public:
 
    template<typename C>
    C* GetComponent();
+
+   const std::string& name() const { return _name; }
+   GameObject& parent() { return *_parent; }
 
    // helper functions
    RigidBody& rigidBody() { return *_rigidBody; }
@@ -42,15 +47,18 @@ public:
    void Render(float delta, SDL_Renderer *renderer);
 
 public:
-   std::string name;
 
 private:
    bool _initialized = false;
    bool _destroyed = false;
 
+   GameObject* _parent = nullptr;
+   std::vector<GameObject*> _children;
+
    std::unordered_map<std::type_index, Component*> _components;
    RigidBody* _rigidBody = nullptr;
 
+   std::string _name;
    Scene* _scene;
 
    DISALLOW_COPY_AND_ASSIGN(GameObject);

@@ -14,7 +14,7 @@ void PhysicsComponent::Init()
    {
       if (info.normal.y < 0 && info.moveDirection.y > 0)
       {
-         if (info.other->gameObject().name == "jumpy_tile") return;
+         if (info.other->gameObject().name() == "jumpy_tile") return;
 
          onGround = true;
       }

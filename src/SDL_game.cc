@@ -87,17 +87,23 @@ void SDLGame::OnInit()
                double j_h = 6;
                Vector2 j_c = { w / 2 + w * j, j_h / 2 + h * i - 3 };
 
-               auto jumpy = new GameObject(&scene, "jumpy_tile");
+               auto jumpy = new GameObject(obj, "jumpy_tile");
                auto r = jumpy->AddComponent<RigidBody>();
                r->position = j_c;
                r->half_width = j_w / 2;
                r->half_height = j_h / 2;
                r->setType(r_staticBody);
                r->onCollision = [](const CollisionInfo& info) {
-                  info.other->velocity.y = -400;
+                  info.other->velocity.y = -600;
                };
                auto b = jumpy->AddComponent<BlockRenderer>();
                b->r = 10; b->g = 125; b->b = 220;
+            }
+            if (tiles_map[i][j] == 4)
+            {
+               r->setType(r_dynamicBody);
+               r->setMass(5);
+               r->friction = 0.5;
             }
          }
       }

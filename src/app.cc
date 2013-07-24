@@ -1,10 +1,12 @@
 // @werat
 
+#include <SDL.h>
 #include <string>
 #include <stdexcept>
 #include <sstream>
 
-#include <SDL.h>
+#include <chrono>
+#include <thread>
 
 #include "app.h"
 #include "renderer.h"
@@ -64,32 +66,33 @@ void App::Run()
 
    SDL_Event Event;
 
-   float targetElapsedTime = 1000.0 / MaxFPS;
-   float elapsedTimer = SDL_GetTicks();
-   float accumulatedElapsedTimer = 0;
-
+   auto targetElapsedTime = std::chrono::milliseconds(1000 / MaxFPS);
+   auto elapsedTimer = std::chrono::high_resolution_clock::now(); 
+   auto accumulatedElapsedTimer = std::chrono::milliseconds::zero();
+   
    isRunning = true;
    while (isRunning)
    {
 
+   // General idea taken from MonoGame (https://github.com/mono/MonoGame) - https://github.com/mono/MonoGame/blob/develop/MonoGame.Framework/Game.cs#L467
+
    RetryTick:
 
       // Advance the accumulated elapsed time.
-      accumulatedElapsedTimer += SDL_GetTicks() - elapsedTimer;
-      elapsedTimer = SDL_GetTicks();
+      accumulatedElapsedTimer += std::chrono::duration_cast<std::chrono::milliseconds>(
+         std::chrono::high_resolution_clock::now() - elapsedTimer);
+      elapsedTimer = std::chrono::high_resolution_clock::now();
 
-      // If we're in the fixed timestep mode and not enough time has elapsed
-      // to perform an update we sleep off the the remaining time
       if (accumulatedElapsedTimer < targetElapsedTime)
       {
-         int sleepTime = targetElapsedTime - accumulatedElapsedTimer;
-         SDL_Delay(sleepTime);
+         auto sleepTime = targetElapsedTime - accumulatedElapsedTimer;
+         std::this_thread::sleep_for(sleepTime);
 
          goto RetryTick;
       }
 
-      // if (accumulatedElapsedTimer > targetElapsedTime*2) accumulatedElapsedTimer = targetElapsedTime*2;
-      if (accumulatedElapsedTimer > 500) accumulatedElapsedTimer = 500;
+      if (accumulatedElapsedTimer > std::chrono::milliseconds(500))
+         accumulatedElapsedTimer = std::chrono::milliseconds(500);
 
       int stepCount = 0;
       // Perform as many full fixed length time steps as we can.
@@ -102,11 +105,12 @@ void App::Run()
          {
             OnEvent(&Event);
          }
-         OnUpdate(targetElapsedTime / 1000.0); // in seconds
+         OnUpdate(targetElapsedTime.count() / 1000.0); // in seconds
       }
 
-      int totalElapsedTime = targetElapsedTime * stepCount;
-      OnRender(totalElapsedTime / 1000.0); // in seconds
+      // auto renderInterpolationFactor = accumulatedElapsedTimer / targetElapsedTime;
+      auto totalElapsedTime = targetElapsedTime * stepCount;
+      OnRender(totalElapsedTime.count() / 1000.0); // in seconds
    }
 
    OnCleanup();

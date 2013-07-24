@@ -16,9 +16,20 @@ GameObject::GameObject(Scene* scene, std::string name)
    }
 
    this->_scene = scene;
-   this->name = name;
+   this->_name = name;
 
    _scene->Add(this);
+}
+GameObject::GameObject(GameObject* parent, std::string name)
+{
+   if (parent == nullptr) {
+      throw std::invalid_argument("parent can't be nullptr.");
+   }
+
+   this->_parent = parent;
+   _parent->_children.push_back(this);
+   this->_scene = parent->_scene;
+   this->_name = name;
 }
 GameObject::~GameObject()
 {
@@ -55,6 +66,10 @@ void GameObject::Init()
    {
       pair.second->Init();
    }
+   for (auto child : _children)
+   {
+      child->Init();
+   }
    _initialized = true;
 }
 void GameObject::Destroy()
@@ -63,6 +78,10 @@ void GameObject::Destroy()
       throw std::logic_error("The game object has already been destroyed.");
    }
 
+   for (auto child : _children)
+   {
+      child->Destroy();
+   }
    for (auto pair : _components)
    {
       pair.second->Destroy();
@@ -80,6 +99,10 @@ void GameObject::PrePhysicsUpdate(float delta)
    {
       pair.second->PrePhysicsUpdate(delta);
    }
+   for (auto child : _children)
+   {
+      child->PrePhysicsUpdate(delta);
+   }
 }
 void GameObject::Update(float delta)
 {
@@ -87,11 +110,19 @@ void GameObject::Update(float delta)
    {
       pair.second->Update(delta);
    }
+   for (auto child : _children)
+   {
+      child->Update(delta);
+   }
 }
 void GameObject::Render(float delta, SDL_Renderer *renderer)
 {
    for (auto pair : _components)
    {
       pair.second->Render(delta, renderer);
-   }  
+   }
+   for (auto child : _children)
+   {
+      child->Render(delta, renderer);
+   }
 }
