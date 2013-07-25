@@ -27,9 +27,10 @@ GameObject::GameObject(GameObject* parent, std::string name)
    }
 
    this->_parent = parent;
-   _parent->_children.push_back(this);
    this->_scene = parent->_scene;
    this->_name = name;
+   
+   _parent->_children.push_back(this);
 }
 GameObject::~GameObject()
 {
