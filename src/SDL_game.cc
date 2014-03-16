@@ -1,6 +1,5 @@
 // @werat
 
-#include <SDL_image.h>
 #include <SDL.h>
 
 #include "SDL_game.h"
@@ -28,7 +27,7 @@ void SDLGame::OnEvent(SDL_Event* event)
    App::OnEvent(event);
 }
 
-void SDLGame::OnInit()  
+void SDLGame::OnInit()
 {
    width = 800;
    height = 600;
@@ -38,7 +37,7 @@ void SDLGame::OnInit()
 
    const int n = 20;
    const int m = 16;
-   int tiles_map[n][m] = 
+   int tiles_map[n][m] =
    {
       { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
       { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -131,7 +130,7 @@ void SDLGame::OnInit()
 
    scene.Init();
 }
-void SDLGame::OnUpdate(float delta) 
+void SDLGame::OnUpdate(float delta)
 {
    scene.Update(delta);
 
@@ -140,7 +139,7 @@ void SDLGame::OnUpdate(float delta)
 void SDLGame::OnRender(float delta)
 {
    SDL_SetRenderDrawColor(renderer, 70, 180, 220, 255);
-   SDL_RenderClear(renderer); 
+   SDL_RenderClear(renderer);
 
    scene.Render(delta, renderer);
 
@@ -149,6 +148,6 @@ void SDLGame::OnRender(float delta)
 void SDLGame::OnCleanup()
 {
    scene.Destroy();
-   
+
    App::OnCleanup();
 }

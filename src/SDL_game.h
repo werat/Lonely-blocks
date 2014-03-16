@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "app.h"
-// #include "world.h"
 #include "scene.h"
 
 class SDLGame : public App
@@ -23,9 +22,8 @@ protected:
    virtual void OnUpdate(float delta) override;
    virtual void OnRender(float delta) override;
    virtual void OnCleanup() override;
-   
+
 private:
-   // World world;
    Scene scene;
 };
 
