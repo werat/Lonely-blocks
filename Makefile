@@ -35,4 +35,4 @@ $(BIN):
 	mkdir $(BIN)
 
 clean:
-	rm -r $(OBJ)
+	rm -rf $(OBJ)
